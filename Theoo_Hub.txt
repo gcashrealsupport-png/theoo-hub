@@ -1,0 +1,678 @@
+--==================================================
+-- THEOO HUB
+-- THEOO HUB
+-- BEST SCRIPT 
+--==================================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+
+local KEY = "THEOO_HUB"
+local ICON_ID = "rbxassetid://102713725301663"
+
+local Config = {
+	AimEnabled=false, ESPEnabled=false, TeamCheck=true, WallCheck=true,
+	ShowFOV=true, GodMode=false, InfiniteAmmo=false, NoReload=false,
+	AimStrength=50, FOVPercent=50, AimTarget="Head",
+	ShowNames=true, ShowHealth=true, ShowDistance=true, ShowHighlight=true,
+	Theme="Purple", UITransparency=0, UIScale=1,
+	ShowFloatingIcon=true, UIAnimations=true, TrainingHitbox=false, BigHead=false,
+
+}
+
+local Themes = {
+	Purple={Main=Color3.fromRGB(35,25,50),Panel=Color3.fromRGB(48,35,68),Accent=Color3.fromRGB(170,80,255),Text=Color3.new(1,1,1),Muted=Color3.fromRGB(180,170,195)},
+	Red={Main=Color3.fromRGB(50,25,25),Panel=Color3.fromRGB(70,35,35),Accent=Color3.fromRGB(255,70,70),Text=Color3.new(1,1,1),Muted=Color3.fromRGB(200,170,170)},
+	Blue={Main=Color3.fromRGB(25,35,55),Panel=Color3.fromRGB(35,50,75),Accent=Color3.fromRGB(70,150,255),Text=Color3.new(1,1,1),Muted=Color3.fromRGB(170,185,205)},
+	Green={Main=Color3.fromRGB(25,50,35),Panel=Color3.fromRGB(35,70,48),Accent=Color3.fromRGB(70,220,120),Text=Color3.new(1,1,1),Muted=Color3.fromRGB(170,200,180)}
+}
+local Theme = Themes[Config.Theme]
+
+local function New(class, props, parent)
+	local obj=Instance.new(class)
+	for p,v in pairs(props or {}) do obj[p]=v end
+	if parent then obj.Parent=parent end
+	return obj
+end
+
+local function Round(obj,radius)
+	local c=Instance.new("UICorner")
+	c.CornerRadius=UDim.new(0,radius or 8)
+	c.Parent=obj
+	return c
+end
+
+local function Stroke(obj,color,thickness)
+	local s=Instance.new("UIStroke")
+	s.Color=color
+	s.Thickness=thickness or 1
+	s.Parent=obj
+	return s
+end
+
+local function Tween(obj,props,duration)
+	if not Config.UIAnimations then
+		for p,v in pairs(props) do obj[p]=v end
+		return
+	end
+	TweenService:Create(obj,TweenInfo.new(duration or .2,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),props):Play()
+end
+
+for _,name in ipairs({"THEOO_HUB_V1","THEOO_HUB","THEOO_HUB_KeySystem","THEOO_HUB_Float"}) do
+	local old=PlayerGui:FindFirstChild(name)
+	if old then old:Destroy() end
+end
+
+--==================================================
+-- AUTO-RUN PREREQUISITES
+-- Runs before any THEOO HUB menu is initialized.
+--==================================================
+
+local function RunPrerequisites()
+	-- Refresh the camera reference before building UI/FOV systems.
+	Camera=workspace.CurrentCamera
+	while not Camera do
+		task.wait()
+		Camera=workspace.CurrentCamera
+	end
+
+	-- Make sure the local character and core humanoid objects are ready.
+	local character=LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+	character:WaitForChild("Humanoid")
+	character:WaitForChild("HumanoidRootPart")
+
+	-- Only prepare the objects required before menu initialization.
+	task.wait()
+	return true
+end
+
+--==================================================
+-- THEOO_HUB KEY SYSTEM
+--==================================================
+
+local KeyGui=New("ScreenGui",{Name="THEOO_HUB_KeySystem",ResetOnSpawn=false,ZIndexBehavior=Enum.ZIndexBehavior.Sibling},PlayerGui)
+local KeyFrame=New("Frame",{Size=UDim2.fromOffset(360,190),Position=UDim2.fromScale(.5,.5),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=Theme.Main},KeyGui)
+Round(KeyFrame,12); Stroke(KeyFrame,Theme.Accent,1)
+
+New("TextLabel",{Size=UDim2.new(1,0,0,45),BackgroundTransparency=1,Text="THEOO HUB",TextColor3=Theme.Text,TextSize=23,Font=Enum.Font.GothamBold},KeyFrame)
+New("TextLabel",{Position=UDim2.fromOffset(0,42),Size=UDim2.new(1,0,0,25),BackgroundTransparency=1,Text="Enter key to continue",TextColor3=Theme.Muted,TextSize=13,Font=Enum.Font.Gotham},KeyFrame)
+
+local KeyBox=New("TextBox",{Position=UDim2.fromOffset(30,78),Size=UDim2.new(1,-60,0,40),BackgroundColor3=Theme.Panel,Text="",PlaceholderText="KEY",PlaceholderColor3=Theme.Muted,TextColor3=Theme.Text,TextSize=16,Font=Enum.Font.Gotham,ClearTextOnFocus=false},KeyFrame)
+Round(KeyBox,8)
+
+local Unlock=New("TextButton",{Position=UDim2.fromOffset(30,130),Size=UDim2.new(1,-60,0,38),BackgroundColor3=Theme.Accent,Text="UNLOCK",TextColor3=Theme.Text,TextSize=14,Font=Enum.Font.GothamBold},KeyFrame)
+Round(Unlock,8)
+
+--==================================================
+-- MAIN 
+--==================================================
+
+local Gui=New("ScreenGui",{Name="THEOO_HUB",ResetOnSpawn=false,Enabled=false,IgnoreGuiInset=true,ZIndexBehavior=Enum.ZIndexBehavior.Sibling},PlayerGui)
+local Main=New("Frame",{Name="Main",Size=UDim2.fromOffset(520,350),Position=UDim2.fromScale(.5,.5),AnchorPoint=Vector2.new(.5,.5),BackgroundColor3=Theme.Main,ClipsDescendants=true},Gui)
+Round(Main,12); Stroke(Main,Theme.Accent,1)
+
+local Header=New("Frame",{Size=UDim2.new(1,0,0,65),BackgroundColor3=Theme.Panel},Main)
+local Icon=New("ImageLabel",{Position=UDim2.fromOffset(12,10),Size=UDim2.fromOffset(45,45),BackgroundTransparency=1,Image=ICON_ID},Header)
+Round(Icon,8)
+New("TextLabel",{Position=UDim2.fromOffset(68,10),Size=UDim2.new(1,-80,0,25),BackgroundTransparency=1,Text="THEOO HUB",TextColor3=Theme.Text,TextSize=19,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left},Header)
+New("TextLabel",{Position=UDim2.fromOffset(68,34),Size=UDim2.new(1,-80,0,20),BackgroundTransparency=1,Text="Developed by THEOO HUB",TextColor3=Theme.Muted,TextSize=11,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left},Header)
+
+do
+	local dragging,dragStart,startPos=false,nil,nil
+	Header.InputBegan:Connect(function(input)
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+			dragging=true; dragStart=input.Position; startPos=Main.Position
+			input.Changed:Connect(function()
+				if input.UserInputState==Enum.UserInputState.End then dragging=false end
+			end)
+		end
+	end)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+			local d=input.Position-dragStart
+			Main.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y)
+		end
+	end)
+end
+
+local Sidebar=New("Frame",{Position=UDim2.fromOffset(0,65),Size=UDim2.fromOffset(120,285),BackgroundColor3=Theme.Panel},Main)
+local Pages=New("Frame",{Position=UDim2.fromOffset(120,65),Size=UDim2.new(1,-120,1,-65),BackgroundTransparency=1},Main)
+local PageObjects={}
+
+local function CreatePage(name)
+	local page=New("ScrollingFrame",{Name=name,Size=UDim2.fromScale(1,1),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=4,ScrollBarImageColor3=Theme.Accent,AutomaticCanvasSize=Enum.AutomaticSize.Y,CanvasSize=UDim2.new(),Visible=false},Pages)
+	New("UIPadding",{PaddingTop=UDim.new(0,12),PaddingBottom=UDim.new(0,15),PaddingLeft=UDim.new(0,12),PaddingRight=UDim.new(0,12)},page)
+	New("UIListLayout",{Padding=UDim.new(0,8),SortOrder=Enum.SortOrder.LayoutOrder},page)
+	PageObjects[name]=page
+	return page
+end
+
+local MainPage=CreatePage("MAIN")
+local ESPPage=CreatePage("ESP")
+local TrainingPage=CreatePage("TRAINING")
+local MiscPage=CreatePage("MISC")
+local SettingsPage=CreatePage("SETTINGS")
+local AboutPage=CreatePage("ABOUT")
+
+local function ShowPage(name)
+	for n,p in pairs(PageObjects) do p.Visible=(n==name) end
+end
+
+for i,name in ipairs({"MAIN","ESP","TRAINING","MISC","SETTINGS","ABOUT"}) do
+	local b=New("TextButton",{Position=UDim2.fromOffset(8,8+(i-1)*43),Size=UDim2.new(1,-16,0,36),BackgroundColor3=Theme.Main,Text=name,TextColor3=Theme.Text,TextSize=11,Font=Enum.Font.GothamBold},Sidebar)
+	Round(b,7)
+	b.MouseButton1Click:Connect(function() ShowPage(name) end)
+end
+
+local function Section(parent,text)
+	return New("TextLabel",{Size=UDim2.new(1,-5,0,27),BackgroundTransparency=1,Text=text,TextColor3=Theme.Accent,TextSize=15,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left},parent)
+end
+
+local function Toggle(parent,text,default,callback)
+	local holder=New("Frame",{Size=UDim2.new(1,-5,0,38),BackgroundColor3=Theme.Panel},parent)
+	Round(holder,7)
+	New("TextLabel",{Position=UDim2.fromOffset(10,0),Size=UDim2.new(1,-70,1,0),BackgroundTransparency=1,Text=text,TextColor3=Theme.Text,TextSize=12,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left},holder)
+	local b=New("TextButton",{Position=UDim2.new(1,-55,.5,-12),Size=UDim2.fromOffset(45,24),BackgroundColor3=default and Theme.Accent or Color3.fromRGB(80,80,85),Text=default and "ON" or "OFF",TextColor3=Theme.Text,TextSize=10,Font=Enum.Font.GothamBold},holder)
+	Round(b,12)
+	local state=default
+	b.MouseButton1Click:Connect(function()
+		state=not state
+		b.Text=state and "ON" or "OFF"
+		b.BackgroundColor3=state and Theme.Accent or Color3.fromRGB(80,80,85)
+		if callback then callback(state) end
+	end)
+	return holder
+end
+
+local function Slider(parent,text,min,max,default,callback)
+	local holder=New("Frame",{Size=UDim2.new(1,-5,0,55),BackgroundColor3=Theme.Panel},parent)
+	Round(holder,7)
+	New("TextLabel",{Position=UDim2.fromOffset(10,3),Size=UDim2.new(1,-70,0,22),BackgroundTransparency=1,Text=text,TextColor3=Theme.Text,TextSize=12,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left},holder)
+	local valueLabel=New("TextLabel",{Position=UDim2.new(1,-60,0,3),Size=UDim2.fromOffset(50,20),BackgroundTransparency=1,Text=tostring(default),TextColor3=Theme.Accent,TextSize=11,Font=Enum.Font.GothamBold},holder)
+	local bar=New("Frame",{Position=UDim2.fromOffset(10,32),Size=UDim2.new(1,-20,0,7),BackgroundColor3=Color3.fromRGB(70,70,75)},holder)
+	Round(bar,5)
+	local fill=New("Frame",{Size=UDim2.new((default-min)/(max-min),0,1,0),BackgroundColor3=Theme.Accent},bar)
+	Round(fill,5)
+	local dragging=false
+	local function Update(x)
+		local percent=math.clamp((x-bar.AbsolutePosition.X)/math.max(bar.AbsoluteSize.X,1),0,1)
+		local value=math.floor(min+(max-min)*percent+.5)
+		fill.Size=UDim2.new(percent,0,1,0); valueLabel.Text=tostring(value)
+		if callback then callback(value) end
+	end
+	bar.InputBegan:Connect(function(input)
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging=true; Update(input.Position.X) end
+	end)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then Update(input.Position.X) end
+	end)
+	UIS.InputEnded:Connect(function(input)
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then dragging=false end
+	end)
+end
+
+--==================================================
+-- THEOO_HUB MAIN
+--==================================================
+
+Section(MainPage,"AIM")
+Toggle(MainPage,"Aimbot",Config.AimEnabled,function(v) Config.AimEnabled=v end)
+Toggle(MainPage,"Show FOV",Config.ShowFOV,function(v) Config.ShowFOV=v end)
+Toggle(MainPage,"God Mode",Config.GodMode,function(v) Config.GodMode=v end)
+Slider(MainPage,"Aim Strength",1,100,Config.AimStrength,function(v) Config.AimStrength=v end)
+Slider(MainPage,"FOV",1,100,Config.FOVPercent,function(v) Config.FOVPercent=v end)
+
+local targetHolder=New("Frame",{Size=UDim2.new(1,-5,0,42),BackgroundColor3=Theme.Panel},MainPage)
+Round(targetHolder,7)
+New("TextLabel",{Position=UDim2.fromOffset(10,0),Size=UDim2.new(1,-130,1,0),BackgroundTransparency=1,Text="Aim Target",TextColor3=Theme.Text,TextSize=12,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left},targetHolder)
+local targetButton=New("TextButton",{Position=UDim2.new(1,-115,.5,-14),Size=UDim2.fromOffset(105,28),BackgroundColor3=Theme.Accent,Text=Config.AimTarget,TextColor3=Theme.Text,TextSize=11,Font=Enum.Font.GothamBold},targetHolder)
+Round(targetButton,6)
+local Targets={"Head","Torso","Leg"}; local targetIndex=1
+targetButton.MouseButton1Click:Connect(function()
+	targetIndex=targetIndex%#Targets+1; Config.AimTarget=Targets[targetIndex]; targetButton.Text=Config.AimTarget
+end)
+
+--==================================================
+-- ESP
+--==================================================
+
+local ESPObjects={}
+local RemoveESP
+
+Section(ESPPage,"PLAYER ESP")
+Toggle(ESPPage,"ESP",Config.ESPEnabled,function(v)
+	Config.ESPEnabled=v
+	if not v then for player in pairs(ESPObjects) do RemoveESP(player) end end
+end)
+Toggle(ESPPage,"Name ESP",Config.ShowNames,function(v) Config.ShowNames=v end)
+Toggle(ESPPage,"Health ESP",Config.ShowHealth,function(v) Config.ShowHealth=v end)
+Toggle(ESPPage,"Distance ESP",Config.ShowDistance,function(v) Config.ShowDistance=v end)
+Toggle(ESPPage,"Highlight ESP",Config.ShowHighlight,function(v) Config.ShowHighlight=v end)
+Toggle(ESPPage,"Team Check",Config.TeamCheck,function(v) Config.TeamCheck=v end)
+Toggle(ESPPage,"Wall Check",Config.WallCheck,function(v) Config.WallCheck=v end)
+
+local TEAM_MARKERS = {
+	"StageTeamSide", "Team", "TeamName", "TeamColor",
+	"TeamId", "TeamID", "team"
+}
+
+local function ReadTeamMarker(inst)
+	if not inst then return nil end
+	for _,name in ipairs(TEAM_MARKERS) do
+		local attr=inst:GetAttribute(name)
+		if attr~=nil then
+			return name.."="..tostring(attr)
+		end
+		local child=inst:FindFirstChild(name)
+		if child and child:IsA("ValueBase") then
+			return name.."="..tostring(child.Value)
+		end
+	end
+	return nil
+end
+
+local function GetCustomTeamIdentity(player)
+	if not player then return nil end
+	local marker=ReadTeamMarker(player) or ReadTeamMarker(player.Character)
+	if marker then return marker end
+	local stats=player:FindFirstChild("leaderstats")
+	marker=ReadTeamMarker(stats)
+	if marker then return marker end
+	if not player.Neutral then
+		return "TeamColor="..tostring(player.TeamColor)
+	end
+	return nil
+end
+
+local customTeamCache={count=0,at=0}
+
+local function GetCustomTeamCount()
+	local now=os.clock()
+	if now-customTeamCache.at>0.5 then
+		local seen={}
+		local count=0
+		for _,player in ipairs(Players:GetPlayers()) do
+			local identity=GetCustomTeamIdentity(player)
+			if identity and not seen[identity] then
+				seen[identity]=true
+				count=count+1
+			end
+		end
+		customTeamCache.count=count
+		customTeamCache.at=now
+	end
+	return customTeamCache.count
+end
+
+local function GetTeamKey(player)
+	if player and player.Team then
+		return "team:"..player.Team.Name
+	end
+	return GetCustomTeamIdentity(player)
+end
+
+local function IsTeammate(player)
+	if not player or player==LocalPlayer then return false end
+
+	-- Prefer Roblox's native Team system when both players have a Team.
+	if LocalPlayer.Team and player.Team then
+		return LocalPlayer.Team==player.Team
+	end
+
+	local localTeam=GetCustomTeamIdentity(LocalPlayer)
+	local targetTeam=GetCustomTeamIdentity(player)
+	if not localTeam or not targetTeam then return false end
+
+	-- Only trust custom markers when at least two distinct custom teams exist.
+	return GetCustomTeamCount()>=2 and localTeam==targetTeam
+end
+
+local function IsEnemy(player)
+	if player==LocalPlayer then return false end
+	if Config.TeamCheck and IsTeammate(player) then return false end
+	return true
+end
+
+local function GetCharacter(player)
+	local c=player and player.Character
+	if not c or not c.Parent then return nil end
+	local h=c:FindFirstChildOfClass("Humanoid")
+	if not h or h.Health<=0 then return nil end
+	return c
+end
+
+local function GetRoot(c)
+	return c:FindFirstChild("HumanoidRootPart") or c:FindFirstChild("UpperTorso") or c:FindFirstChild("Torso")
+end
+
+RemoveESP=function(player)
+	local d=ESPObjects[player]
+	if not d then return end
+	if d.Highlight then d.Highlight:Destroy() end
+	if d.Billboard then d.Billboard:Destroy() end
+	ESPObjects[player]=nil
+end
+
+local function CreateESP(player)
+	local c=GetCharacter(player)
+	if player==LocalPlayer or not c then return end
+	RemoveESP(player)
+	local root=GetRoot(c)
+	if not root then return end
+	local h=Instance.new("Highlight")
+	h.Name="THEOO_HUB_ESP_Highlight"; h.Adornee=c; h.FillColor=Theme.Accent; h.OutlineColor=Theme.Accent
+	h.FillTransparency=.75; h.DepthMode=Enum.HighlightDepthMode.AlwaysOnTop
+	h.Enabled=Config.ESPEnabled and Config.ShowHighlight; h.Parent=c
+	local bb=Instance.new("BillboardGui")
+	bb.Name="THEOO_HUB_ESP_Info"; bb.Adornee=root; bb.Size=UDim2.fromOffset(200,70); bb.StudsOffset=Vector3.new(0,3,0); bb.AlwaysOnTop=true; bb.Enabled=Config.ESPEnabled; bb.Parent=c
+	local t=Instance.new("TextLabel")
+	t.Size=UDim2.fromScale(1,1); t.BackgroundTransparency=1; t.TextColor3=Color3.new(1,1,1); t.TextStrokeTransparency=0
+	t.TextSize=13; t.Font=Enum.Font.GothamBold; t.TextWrapped=true; t.Parent=bb
+	ESPObjects[player]={Character=c,Highlight=h,Billboard=bb,Text=t}
+end
+
+local function UpdateESP()
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p~=LocalPlayer then
+			local c=GetCharacter(p)
+			if not Config.ESPEnabled or not IsEnemy(p) or not c then RemoveESP(p)
+			else
+				local d=ESPObjects[p]
+				if not d or d.Character~=c then CreateESP(p); d=ESPObjects[p] end
+				if d then
+					local root=GetRoot(c); local h=c:FindFirstChildOfClass("Humanoid")
+					if root and h then
+						d.Highlight.Enabled=Config.ESPEnabled and Config.ShowHighlight
+						d.Billboard.Enabled=Config.ESPEnabled
+						local lines={}
+						if Config.ShowNames then table.insert(lines,p.DisplayName) end
+						if Config.ShowHealth then table.insert(lines,"HP: "..math.floor(h.Health)) end
+						if Config.ShowDistance then table.insert(lines,math.floor((Camera.CFrame.Position-root.Position).Magnitude).." studs") end
+						d.Text.Text=table.concat(lines,"\n")
+					end
+				end
+			end
+		end
+	end
+end
+Players.PlayerAdded:Connect(function(p)
+	p.CharacterAdded:Connect(function() task.wait(.5); if Config.ESPEnabled then CreateESP(p) end end)
+end)
+Players.PlayerRemoving:Connect(RemoveESP)
+RunService.RenderStepped:Connect(UpdateESP)
+
+--==================================================
+-- THEOO_HUB
+--==================================================
+
+Section(TrainingPage,"TRAINING DUMMIES")
+Toggle(TrainingPage,"Training Hitbox",Config.TrainingHitbox,function(v) Config.TrainingHitbox=v end)
+Toggle(TrainingPage,"Big Head",Config.BigHead,function(v) Config.BigHead=v end)
+
+local DummyFolder=workspace:FindFirstChild("TrainingDummies")
+local function ApplyDummySettings()
+	if not DummyFolder then return end
+	for _,dummy in ipairs(DummyFolder:GetChildren()) do
+		if dummy:IsA("Model") then
+			local h=dummy:FindFirstChildOfClass("Humanoid")
+			if h then
+				for _,part in ipairs(dummy:GetDescendants()) do
+					if part:IsA("BasePart") then
+						if not part:GetAttribute("SNUG_OriginalSize") then part:SetAttribute("SNUG_OriginalSize",part.Size) end
+						local original=part:GetAttribute("SNUG_OriginalSize")
+						part.Size=Config.TrainingHitbox and original*2 or original
+					end
+				end
+				local head=dummy:FindFirstChild("Head")
+				if head and head:IsA("BasePart") then
+					if not head:GetAttribute("SNUG_OriginalHeadSize") then head:SetAttribute("SNUG_OriginalHeadSize",head.Size) end
+					local original=head:GetAttribute("SNUG_OriginalHeadSize")
+					head.Size=Config.BigHead and original*2 or original
+				end
+			end
+		end
+	end
+end
+
+--==================================================
+-- DAMAGE / HIT / DPS
+--==================================================
+
+local CounterFrame=New("Frame",{Position=UDim2.fromOffset(10,10),Size=UDim2.fromOffset(190,100),BackgroundColor3=Theme.Main,Visible=false,ZIndex=20},Gui)
+Round(CounterFrame,10); Stroke(CounterFrame,Theme.Accent,1)
+local DamageText=New("TextLabel",{Position=UDim2.fromOffset(10,5),Size=UDim2.new(1,-20,0,25),BackgroundTransparency=1,Text="Damage: 0",TextColor3=Theme.Text,TextSize=13,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left},CounterFrame)
+local HitText=New("TextLabel",{Position=UDim2.fromOffset(10,32),Size=UDim2.new(1,-20,0,25),BackgroundTransparency=1,Text="Hits: 0",TextColor3=Theme.Text,TextSize=13,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left},CounterFrame)
+local DPSText=New("TextLabel",{Position=UDim2.fromOffset(10,59),Size=UDim2.new(1,-20,0,25),BackgroundTransparency=1,Text="DPS: 0",TextColor3=Theme.Accent,TextSize=13,Font=Enum.Font.GothamBold,TextXAlignment=Enum.TextXAlignment.Left},CounterFrame)
+local TotalDamage,HitCount,DamageStart=0,0,os.clock()
+local function RegisterDamage(amount)
+	if amount<=0 then return end
+	TotalDamage+=amount; HitCount+=1
+	local dps=TotalDamage/math.max(os.clock()-DamageStart,.1)
+	DamageText.Text="Damage: "..math.floor(TotalDamage); HitText.Text="Hits: "..HitCount; DPSText.Text="DPS: "..math.floor(dps); CounterFrame.Visible=true
+end
+local function MonitorDummy(model)
+	if not model:IsA("Model") then return end
+	local h=model:FindFirstChildOfClass("Humanoid")
+	if not h or h:GetAttribute("SNUG_DamageMonitor") then return end
+	h:SetAttribute("SNUG_DamageMonitor",true)
+	local last=h.Health
+	h.HealthChanged:Connect(function(n) if n<last then RegisterDamage(last-n) end; last=n end)
+end
+if DummyFolder then
+	for _,d in ipairs(DummyFolder:GetChildren()) do MonitorDummy(d) end
+	DummyFolder.ChildAdded:Connect(function(d) task.wait(.1); MonitorDummy(d) end)
+end
+RunService.Heartbeat:Connect(ApplyDummySettings)
+
+--==================================================
+-- THEOO_HUB 
+--==================================================
+
+local function SendGunSetting(setting,value)
+	local c=LocalPlayer.Character
+	if not c then return end
+	local tool=c:FindFirstChild("THEOO_HUB_Gun") or LocalPlayer.Backpack:FindFirstChild("THEOO_HUB_Gun")
+	if not tool then return end
+	local event=tool:FindFirstChild("SettingsEvent")
+	if event and event:IsA("RemoteEvent") then event:FireServer(setting,value) end
+end
+local function UpdateGunSettings()
+	SendGunSetting("InfiniteAmmo",Config.InfiniteAmmo)
+	SendGunSetting("NoReload",Config.NoReload)
+end
+Section(MiscPage,"THEOO_HUB GUN")
+Toggle(MiscPage,"Infinite Ammo",Config.InfiniteAmmo,function(v) Config.InfiniteAmmo=v; UpdateGunSettings() end)
+Toggle(MiscPage,"No Reload",Config.NoReload,function(v) Config.NoReload=v; UpdateGunSettings() end)
+New("TextLabel",{Size=UDim2.new(1,-5,0,40),BackgroundTransparency=1,Text="Uses the SettingsEvent inside your own SNUG_Gun.",TextColor3=Theme.Muted,TextSize=11,TextWrapped=true,Font=Enum.Font.Gotham},MiscPage)
+
+--==================================================
+-- AIMBOTZ NG THEOO_HUB
+--==================================================
+
+local function GetAimPart(c)
+	if not c then return nil end
+	if Config.AimTarget=="Head" then return c:FindFirstChild("Head")
+	elseif Config.AimTarget=="Torso" then return c:FindFirstChild("UpperTorso") or c:FindFirstChild("Torso") or c:FindFirstChild("HumanoidRootPart")
+	else return c:FindFirstChild("LeftLowerLeg") or c:FindFirstChild("RightLowerLeg") or c:FindFirstChild("Left Leg") or c:FindFirstChild("Right Leg") or c:FindFirstChild("HumanoidRootPart") end
+end
+
+local function CanSeeTarget(part,c)
+	if not Config.WallCheck then return true end
+	local params=RaycastParams.new()
+	params.FilterType=Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances=LocalPlayer.Character and {LocalPlayer.Character} or {}
+	local result=workspace:Raycast(Camera.CFrame.Position,part.Position-Camera.CFrame.Position,params)
+	return not result or result.Instance:IsDescendantOf(c)
+end
+
+local function GetFOVViewportCenter()
+	-- Coordinate system used by Camera:WorldToViewportPoint().
+	local viewport=Camera.ViewportSize
+	return Vector2.new(viewport.X*0.5,viewport.Y*0.5)
+end
+
+local function GetFOVScreenCenter()
+	-- Coordinate system used by our IgnoreGuiInset=true ScreenGui.
+	-- The inset is added only for drawing the circle, not for target math.
+	local viewport=Camera.ViewportSize
+	-- THEOO_HUB uses IgnoreGuiInset=true, so its GUI coordinate system
+	-- must use the same raw viewport center as WorldToViewportPoint().
+	return Vector2.new(viewport.X*0.5,viewport.Y*0.5)
+end
+
+local function GetFOVRadius()
+	local viewport=Camera.ViewportSize
+	local shortestSide=math.min(viewport.X,viewport.Y)
+	local percent=math.clamp(tonumber(Config.FOVPercent) or 1,1,100)
+	local minRadius=2
+	local maxRadius=shortestSide*0.35
+	local t=(percent-1)/99
+	return minRadius+(maxRadius-minRadius)*t
+end
+
+local function GetClosestTarget()
+	local center=GetFOVViewportCenter()
+	local radius=GetFOVRadius()
+	local closest,dist=nil,math.huge
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p~=LocalPlayer and IsEnemy(p) then
+			local c=GetCharacter(p); local part=GetAimPart(c)
+			if part then
+				local pos,on=Camera:WorldToViewportPoint(part.Position)
+				if on then
+					local d=(Vector2.new(pos.X,pos.Y)-center).Magnitude
+					if d<=radius and d<dist and CanSeeTarget(part,c) then closest,dist=part,d end
+				end
+			end
+		end
+	end
+	return closest
+end
+
+-- Prevent duplicate binding on re-execution.
+pcall(function() RunService:UnbindFromRenderStep("THEOO_HUB_AimLoop") end)
+RunService:BindToRenderStep("THEOO_HUB_AimLoop",Enum.RenderPriority.Camera.Value+1,function()
+	if not Gui.Enabled or not Config.AimEnabled then return end
+	local target=GetClosestTarget()
+	if target then
+		local cf=CFrame.lookAt(Camera.CFrame.Position,target.Position)
+		Camera.CFrame=Camera.CFrame:Lerp(cf,math.clamp(Config.AimStrength/100,.01,1))
+	end
+end)
+
+--==================================================
+-- FOV / GOD MODE
+--==================================================
+
+local FOVCircle=New("Frame",{Name="FOVCircle",Size=UDim2.fromOffset(4,4),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.fromOffset(0,0),BackgroundTransparency=1,Visible=false,ZIndex=10},Gui)
+local CircleStroke=Instance.new("UIStroke"); CircleStroke.Color=Theme.Accent; CircleStroke.Thickness=2; CircleStroke.Parent=FOVCircle
+Round(FOVCircle,100)
+
+RunService.RenderStepped:Connect(function()
+	local center=GetFOVScreenCenter()
+	local diameter=math.max(4,GetFOVRadius()*2)
+	FOVCircle.Visible=Config.ShowFOV and Gui.Enabled
+	FOVCircle.Position=UDim2.fromOffset(center.X,center.Y)
+	FOVCircle.Size=UDim2.fromOffset(diameter,diameter)
+end)
+
+local function ApplyGodMode()
+	if not Config.GodMode then return end
+	local c=LocalPlayer.Character; local h=c and c:FindFirstChildOfClass("Humanoid")
+	if h then h.MaxHealth=math.huge; h.Health=math.huge end
+end
+RunService.Heartbeat:Connect(ApplyGodMode)
+
+--==================================================
+-- SETTINGS / ABOUT
+--==================================================
+
+local FloatGui=New("ScreenGui",{Name="THEOO_HUB_Float",ResetOnSpawn=false,Enabled=false,ZIndexBehavior=Enum.ZIndexBehavior.Sibling},PlayerGui)
+local FloatButton=New("ImageButton",{Name="THEOO_HUB_IconButton",Size=UDim2.fromOffset(55,55),Position=UDim2.new(1,-75,.5,-30),BackgroundColor3=Theme.Panel,Image=ICON_ID,AutoButtonColor=false},FloatGui)
+Round(FloatButton,10); Stroke(FloatButton,Theme.Accent,1)
+
+do
+	local dragging=false; local dragStart; local startPos; local moved=false
+	FloatButton.InputBegan:Connect(function(input)
+		if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+			dragging=true; moved=false; dragStart=input.Position; startPos=FloatButton.Position
+			input.Changed:Connect(function()
+				if input.UserInputState==Enum.UserInputState.End then
+					dragging=false
+					if not moved then Main.Visible=not Main.Visible end
+				end
+			end)
+		end
+	end)
+	UIS.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch) then
+			local d=input.Position-dragStart
+			if math.abs(d.X)>5 or math.abs(d.Y)>5 then moved=true end
+			FloatButton.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+d.X,startPos.Y.Scale,startPos.Y.Offset+d.Y)
+		end
+	end)
+end
+
+Section(SettingsPage,"UI SETTINGS")
+Toggle(SettingsPage,"Floating Icon",Config.ShowFloatingIcon,function(v) Config.ShowFloatingIcon=v; FloatGui.Enabled=v and Gui.Enabled end)
+Toggle(SettingsPage,"UI Animations",Config.UIAnimations,function(v) Config.UIAnimations=v end)
+
+local ThemeNames={"Purple","Red","Blue","Green"}; local CurrentTheme=1
+local ThemeHolder=New("Frame",{Size=UDim2.new(1,-5,0,45),BackgroundColor3=Theme.Panel},SettingsPage)
+Round(ThemeHolder,7)
+New("TextLabel",{Position=UDim2.fromOffset(10,0),Size=UDim2.new(1,-120,1,0),BackgroundTransparency=1,Text="Theme",TextColor3=Theme.Text,TextSize=12,Font=Enum.Font.Gotham,TextXAlignment=Enum.TextXAlignment.Left},ThemeHolder)
+local ThemeButton=New("TextButton",{Position=UDim2.new(1,-110,.5,-14),Size=UDim2.fromOffset(100,28),BackgroundColor3=Theme.Accent,Text=Config.Theme,TextColor3=Theme.Text,TextSize=11,Font=Enum.Font.GothamBold},ThemeHolder)
+Round(ThemeButton,6)
+ThemeButton.MouseButton1Click:Connect(function()
+	CurrentTheme=CurrentTheme%#ThemeNames+1; Config.Theme=ThemeNames[CurrentTheme]; Theme=Themes[Config.Theme]
+	ThemeButton.Text=Config.Theme; Main.BackgroundColor3=Theme.Main; Header.BackgroundColor3=Theme.Panel; Sidebar.BackgroundColor3=Theme.Panel; CircleStroke.Color=Theme.Accent
+end)
+
+local ResetButton=New("TextButton",{Size=UDim2.new(1,-5,0,40),BackgroundColor3=Color3.fromRGB(120,50,50),Text="RESET SETTINGS",TextColor3=Theme.Text,TextSize=12,Font=Enum.Font.GothamBold},SettingsPage)
+Round(ResetButton,7)
+ResetButton.MouseButton1Click:Connect(function()
+	Config.AimEnabled=false; Config.ESPEnabled=false; Config.GodMode=false; Config.InfiniteAmmo=false; Config.NoReload=false; Config.TrainingHitbox=false; Config.BigHead=false
+	Config.AimStrength=50; Config.FOVPercent=50; Config.AimTarget="Head"
+	for p in pairs(ESPObjects) do RemoveESP(p) end
+end)
+
+New("ImageLabel",{Size=UDim2.fromOffset(90,90),BackgroundTransparency=1,Image=ICON_ID},AboutPage)
+New("TextLabel",{Size=UDim2.new(1,-5,0,35),BackgroundTransparency=1,Text="THEOO HUB",TextColor3=Theme.Text,TextSize=21,Font=Enum.Font.GothamBold},AboutPage)
+New("TextLabel",{Size=UDim2.new(1,-5,0,35),BackgroundTransparency=1,Text="SCRIPT BY THEOO HUB",TextColor3=Theme.Muted,TextSize=13,Font=Enum.Font.GothamBold},AboutPage)
+
+local TikTokBox=New("TextBox",{Size=UDim2.new(1,-20,0,42),BackgroundColor3=Theme.Panel,TextColor3=Theme.Text,PlaceholderColor3=Theme.Muted,Text="www.tiktok.com/@pepitomanalotodump",TextSize=12,Font=Enum.Font.Gotham,ClearTextOnFocus=false,TextEditable=false,Selectable=true,TextWrapped=false},AboutPage)
+Round(TikTokBox,7); Stroke(TikTokBox,Theme.Accent,1)
+
+local TikTokHint=New("TextLabel",{Size=UDim2.new(1,-20,0,28),BackgroundTransparency=1,Text="Tap the account text to select it, then Copy.",TextColor3=Theme.Muted,TextSize=10,Font=Enum.Font.Gotham,TextWrapped=true},AboutPage)
+
+--==================================================
+-- UNLOCK / START
+--==================================================
+
+local function UnlockMenu()
+	KeyGui.Enabled=false; Gui.Enabled=true; FloatGui.Enabled=Config.ShowFloatingIcon; ShowPage("MAIN")
+	if Config.UIAnimations then
+		Main.Size=UDim2.fromOffset(480,320)
+		Tween(Main,{Size=UDim2.fromOffset(520,350)},.25)
+	end
+end
+
+local function TryUnlock()
+	if string.upper(KeyBox.Text)==KEY then UnlockMenu()
+	else KeyBox.Text=""; KeyBox.PlaceholderText="WRONG KEY" end
+end
+Unlock.MouseButton1Click:Connect(TryUnlock)
+KeyBox.FocusLost:Connect(function(enterPressed) if enterPressed then TryUnlock() end end)
+
+Gui.Enabled=false
+FloatGui.Enabled=false
+KeyGui.Enabled=true
+ShowPage("MAIN")
+
+print("THEOO HUB loaded successfully. Prerequisites: READY | FOV: FIXED")
