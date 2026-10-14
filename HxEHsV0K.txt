@@ -1,0 +1,249 @@
+--// Rayfields
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "Knife VS Gun DUELS - SARHUB | SARpastes",
+    LoadingTitle = "Loading...",
+    LoadingSubtitle = "by SARpastes | SARHUB",
+    ConfigurationSaving = {Enabled = false}
+})
+
+--// Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+local RunService = game:GetService("RunService")
+local Camera = workspace.CurrentCamera
+
+--// Tabs
+local MainTab = Window:CreateTab("Main", 4483362458)
+local InfoTab = Window:CreateTab("Info", 4483362458)
+
+--// States
+local AimbotEnabled = false
+local ESPEnabled = false
+local AutoFireEnabled = false
+local FOV = 100
+
+local CPS = 5
+local ShootDelay = 1 / CPS
+local LastShot = 0
+
+---------------------------------------------------
+-- FOV CIRCLE
+---------------------------------------------------
+local FOVCircle = Drawing.new("Circle")
+FOVCircle.Visible = false
+FOVCircle.Radius = FOV
+FOVCircle.Thickness = 2
+FOVCircle.Color = Color3.fromRGB(255,255,255)
+FOVCircle.Filled = false
+
+RunService.RenderStepped:Connect(function()
+    local viewport = Camera.ViewportSize
+    FOVCircle.Position = Vector2.new(viewport.X / 2, viewport.Y / 2)
+    FOVCircle.Radius = FOV
+end)
+
+---------------------------------------------------
+-- TARGET FUNCTION
+---------------------------------------------------
+
+local function IsVisible(targetPart)
+    local origin = Camera.CFrame.Position
+    local direction = (targetPart.Position - origin)
+
+    local params = RaycastParams.new()
+    params.FilterDescendantsInstances = {LocalPlayer.Character}
+    params.FilterType = Enum.RaycastFilterType.Blacklist
+
+    local result = workspace:Raycast(origin, direction, params)
+
+    if result then
+        return result.Instance:IsDescendantOf(targetPart.Parent)
+    end
+
+    return false
+end
+
+local function GetClosestPlayer()
+    local closest = nil
+    local shortest = FOV
+
+    for _, plr in pairs(Players:GetPlayers()) do
+        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character:FindFirstChild("HumanoidRootPart") then
+            
+            local root = plr.Character.HumanoidRootPart
+            local head = plr.Character.Head
+
+            -- Distance check (500 studs max)
+            local distance3D = (root.Position - Camera.CFrame.Position).Magnitude
+            if distance3D <= 500 then
+
+                local pos, onScreen = Camera:WorldToViewportPoint(head.Position)
+                if onScreen then
+                    local dist2D = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+
+                    if dist2D < shortest and IsVisible(head) then
+                        shortest = dist2D
+                        closest = plr
+                    end
+                end
+
+            end
+        end
+    end
+
+    return closest
+end
+
+---------------------------------------------------
+-- AIMBOT
+---------------------------------------------------
+RunService.RenderStepped:Connect(function()
+    if AimbotEnabled then
+        local target = GetClosestPlayer()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+        end
+    end
+end)
+
+---------------------------------------------------
+-- ESP (HIGHLIGHT)
+---------------------------------------------------
+local ESPContainer = {}
+
+local function ApplyESP(player)
+    if player == LocalPlayer then return end
+
+    local function setup(char)
+        if ESPContainer[player] then ESPContainer[player]:Destroy() end
+
+        local h = Instance.new("Highlight")
+        h.FillColor = Color3.fromRGB(255,0,0)
+        h.OutlineColor = Color3.fromRGB(255,255,255)
+        h.FillTransparency = 0.5
+        h.Adornee = char
+        h.Parent = char
+
+        ESPContainer[player] = h
+    end
+
+    if player.Character then
+        setup(player.Character)
+    end
+
+    player.CharacterAdded:Connect(function(char)
+        task.wait(0.5)
+        if ESPEnabled then
+            setup(char)
+        end
+    end)
+end
+
+local function UpdateESP()
+    for _, plr in pairs(Players:GetPlayers()) do
+        if ESPEnabled then
+            if not ESPContainer[plr] then
+                ApplyESP(plr)
+            end
+        else
+            if ESPContainer[plr] then
+                ESPContainer[plr]:Destroy()
+                ESPContainer[plr] = nil
+            end
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(function(plr)
+    if ESPEnabled then
+        ApplyESP(plr)
+    end
+end)
+
+RunService.RenderStepped:Connect(UpdateESP)
+
+---------------------------------------------------
+-- AUTOFIRE (LOOK DETECTION)
+---------------------------------------------------
+RunService.RenderStepped:Connect(function()
+    if AutoFireEnabled then
+        local target = GetClosestPlayer()
+
+        if target and tick() - LastShot >= ShootDelay then
+            LastShot = tick()
+
+            if mouse1press and mouse1release then
+                mouse1press()
+                task.wait()
+                mouse1release()
+            end
+        end
+    end
+end)
+
+---------------------------------------------------
+-- UI
+---------------------------------------------------
+
+-- AIMBOT SECTION
+MainTab:CreateSection("Aimbot")
+
+MainTab:CreateToggle({
+    Name = "Enable Aimbot",
+    CurrentValue = false,
+    Callback = function(v)
+        AimbotEnabled = v
+        FOVCircle.Visible = v
+    end
+})
+
+MainTab:CreateSlider({
+    Name = "FOV Size",
+    Range = {50, 400},
+    Increment = 10,
+    CurrentValue = 100,
+    Callback = function(v)
+        FOV = v
+    end
+})
+
+-- ESP SECTION
+MainTab:CreateSection("ESP")
+
+MainTab:CreateToggle({
+    Name = "Enable Highlight ESP",
+    CurrentValue = false,
+    Callback = function(v)
+        ESPEnabled = v
+        UpdateESP()
+    end
+})
+
+-- AUTOFIRE SECTION
+MainTab:CreateSection("Autofire")
+
+MainTab:CreateToggle({
+    Name = "Enable Autofire",
+    CurrentValue = false,
+    Callback = function(v)
+        AutoFireEnabled = v
+    end
+})
+
+---------------------------------------------------
+-- INFO TAB
+---------------------------------------------------
+InfoTab:CreateLabel("its better if on a 1v1 or 2v2 its a very simple script by")
+InfoTab:CreateLabel("by SARpastes | SARHUB for Knife VS Gun DUELS")
+
+---------------------------------------------------
+-- Notify
+---------------------------------------------------
+Rayfield:Notify({
+    Title = "Loaded",
+    Content = "Everything Ready",
+    Duration = 5
+})
