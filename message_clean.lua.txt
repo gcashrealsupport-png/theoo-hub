@@ -1,0 +1,576 @@
+-- Deobfuscated by deobf (dynamic trace)
+-- source: in.lua
+-- NOTE: reconstructed from observed behaviour; branches that were not taken
+--       during the trace are missing and conditions are only noted in comments.
+-- run status: script error: Script:1: attempt to compare number < userdata
+--   /tmp/deobf_snot5x7a/in.deobf.luau.harness.luau:6142
+--   Script:1
+--   Script:1
+--   Script:1
+--   /tmp/deobf_snot5x7a/in.deobf.luau.harness.luau:6156
+--   
+-- 375 statements recorded in 0.46s
+-- remotes fired/invoked:
+--   tagged[1].components.remotes.direct.patch
+--   tagged[1].components.remotes.call.server
+
+-- [deobf] folded 13 repeated calls into 4 helper functions and 0 unrolled runs into loops
+-- [deobf] removed 57 lines of the obfuscator's environment/anti-tamper probes
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local CollectionService = game:GetService("CollectionService")
+Players.LocalPlayer:GetMouse()
+local tags = script.Parent:GetTags()
+local result = tags[1]:gsub("flux kit client %- ", "")
+local tagged = CollectionService:GetTagged("kit - " .. result)
+local response = tagged[1].components.remotes.direct.patch:InvokeServer()
+local ScriptContext = game:GetService("ScriptContext")
+
+ScriptContext.Error:Connect(function()
+	-- [envlog] error: Script:1: attempt to index nil with 'IsDescendantOf'
+end)
+
+local module = require(script.Parent.modules.functions)
+
+for k, v in response.showfileUsers do
+end
+
+Players.LocalPlayer.Name:lower()
+module.init({ tagged[1], response.users["0"] }, response)
+
+for k2, v2 in response.guis do
+	for k3, v3 in module.fx.sh.editorValue.fixture do
+	end
+
+	v2.board.MouseEnter:Connect(function()
+	end)
+
+	for k4, v4 in response.populatedFixts do
+		v2.board.start.fixtures.holster.scroll[224].status.populated.ImageColor3 = module.fx.sh.text.rgb.white
+	end
+end
+
+for k5, v5 in module.fx.sh.editorValue.fixture do
+end
+
+for k6, v6 in module.fx.sh.editorValue.fixture do
+end
+
+for k7, v7 in response.guis do
+	v7.board.start.startup.labels["message 1"].Position = UDim2.new(0.1, 0, 0.4, 0)
+	v7.board.start.startup.labels["message 1"].Size = UDim2.new(0.8, 0, 0.1, 0)
+	v7.board.start.startup.labels["message 2"].Position = UDim2.new(0.1, 0, 0.4, 0)
+	v7.board.start.startup.labels["message 2"].Size = UDim2.new(0.8, 0, 0.1, 0)
+	v7.board.start.startup.labels["message 1"].Text = "loading"
+	v7.board.start.startup.labels["message 1"].TextXAlignment = "Left"
+	v7.board.start.startup.labels["message 2"].FontFace = module.fx.sh.text.font.bold
+	v7.board.start.startup.labels["message 2"].TextYAlignment = "Bottom"
+	v7.board.start.startup.labels["message 2"].TextXAlignment = "Right"
+	v7.board.start.startup.bar.Visible = true
+	module.fx.sh.tools.tween(v7.board.start.startup.bar.gradient, 0.25, { Offset = Vector2.new(-0.75, 0) })
+	v7.board.start.startup.labels["message 2"].Text = "<font color = 'rgb(100, 100, 100)'>connecting 1 gui</font>"
+end
+
+local function setupV(v)
+	v:GetAttribute("index")
+	v.board.pill.buttons.alternative.Text = "M"
+end
+
+local function setupV2(v)
+	v:GetAttribute("index")
+	v.board.pill.group.Visible = v.board.pill.group.Visible
+end
+
+for k8, v8 in response.guis do
+	v8.board.pill.flux.MouseButton1Down:Connect(function(x, y)
+		v8:GetAttribute("index")
+		v8.board.pill.message.Text = "models by <b>frenchyfrie1</b>, everything else by <b>confi4</b>"
+		module.fx.sh.tools.tween(v8.board.pill.stroke, 0.375, { Color = module.fx.sh.text.rgb.white })
+		module.fx.sh.tools.tween(v8.board.pill.buttons, 0.15, { Position = UDim2.new(0.86, 0, 1, 0) })
+		module.fx.sh.tools.tween(v8.board.pill.group, 0.15, { Position = UDim2.new(0.16, 0, 1, 0) })
+		module.fx.sh.tools.tween(v8.board.pill.flux, 0.15, { Position = UDim2.new(0.02, 0, 1, 0) })
+		module.fx.sh.tools.tween(v8.board.pill.message, 0.375, { Position = UDim2.new(0, 0, 0.3, 0) })
+
+		task.delay(0.125, function()
+		end)
+	end)
+
+	v8.board.pill.buttons.alternative.MouseButton1Down:Connect(function(x2, y2)
+		setupV(v8)
+		local children5 = v8.board:GetChildren()
+
+		for k19, v19 in children5 do
+			v19.Visible = false
+		end
+	end)
+
+	v8.board.pill.buttons["return"].MouseButton1Down:Connect(function(x3, y3)
+		setupV2(v8)
+		v8.board.pill.buttons["return"].TextColor3 = module.fx.sh.text.rgb.darkRed
+		v8.board.pill.buttons.alternative.TextColor3 = module.fx.sh.text.rgb.lightGray
+		v8:GetAttribute("index")
+		v8.board.pill.buttons["return"].Visible = false
+		v8.board.pill.buttons.alternative.Visible = false
+		tagged[1].components.remotes.call.server:FireServer("server", "populations", "remove", nil, "0")
+		local children6 = v8.board:GetChildren()
+
+		for k20, v20 in children6 do
+			v20.Visible = false
+		end
+	end)
+
+	v8.board.start.tabs.hover.MouseEnter:Connect(function()
+		v8.board.start.tabs.last.Visible = true
+	end)
+
+	v8.board.start.tabs.hover.MouseLeave:Connect(function()
+		v8.board.start.tabs.last.Visible = false
+	end)
+
+	local children = v8.board.start.tabs.buttons:GetChildren()
+
+	for k9, v9 in children do
+		v9.MouseButton1Down:Connect(function(x4, y4)
+			setupV(v8)
+			local children7 = v8.board.start.startup.labels:GetChildren()
+
+			for k21, v21 in children7 do
+				v21.Visible = false
+			end
+
+			v8.board.start.tabs.Visible = false
+			v8.board.start.fixtures.Visible = true
+		end)
+
+		v9.MouseButton2Down:Connect(function()
+			v8.board.start.tabs.last.Text:gsub("rmb: ", "")
+			setupV(v8)
+			v8:GetAttribute("index")
+			local children8 = v8.board.main:GetChildren()
+
+			for k22, v22 in children8 do
+				v22.Visible = false
+			end
+
+			local children9 = v8.board.branch.faders.presets:GetChildren()
+
+			for k23, v23 in children9 do
+				v23.Visible = false
+			end
+
+			local children10 = v8.board.branch.faders.extras:GetChildren()
+
+			for k24, v24 in children10 do
+				v24.Visible = false
+			end
+
+			local children11 = v8.board.branch:GetChildren()
+
+			for k25, v25 in children11 do
+				v25.Visible = false
+			end
+
+			local children12 = v8.board:GetChildren()
+
+			for k26, v26 in children12 do
+				v26.Visible = false
+			end
+			-- [envlog] error: Script:1: attempt to index nil with userdata
+		end)
+	end
+
+	task.spawn(function()
+		local children2 = v8.board.start.fixtures.holster.scroll:GetChildren()
+
+		for k10, v10 in children2 do
+			v10.fill.MouseButton1Down:Connect(function(x5, y5)
+				v8:GetAttribute("index")
+				local children13 = v8.board.main:GetChildren()
+
+				for k27, v27 in children13 do
+					v27.Visible = false
+				end
+
+				local children14 = v8.board.branch.faders.presets:GetChildren()
+
+				for k28, v28 in children14 do
+					v28.Visible = false
+				end
+
+				local children15 = v8.board.branch.faders.extras:GetChildren()
+
+				for k29, v29 in children15 do
+					v29.Visible = false
+				end
+
+				local children16 = v8.board.branch:GetChildren()
+
+				for k30, v30 in children16 do
+					v30.Visible = false
+				end
+
+				local children17 = v8.board:GetChildren()
+
+				for k31, v31 in children17 do
+					v31.Visible = false
+				end
+				-- [envlog] error: Script:1: attempt to index nil with userdata
+			end)
+
+			v10.fill.MouseButton2Down:Connect(function()
+				for k32, v32 in response.guis do
+					v32.board.start.fixtures.holster.scroll[652].fill.FontFace = module.fx.sh.text.font.bold
+					v32.board.start.fixtures.holster.scroll[652].fill.TextColor3 = module.fx.sh.text.rgb.lightGray
+				end
+			end)
+
+			task.wait()
+		end
+	end)
+
+	local children3 = v8.board.editors.sidebar:GetChildren()
+
+	for k11, v11 in children3 do
+		module.fx.sh.tools.goodGuiIns(v11)
+
+		v11.MouseButton1Down:Connect(function(x6, y6)
+			local children18 = v8.board.editors.holster:GetChildren()
+
+			for k33, v33 in children18 do
+				v33.Visible = false
+			end
+
+			local children19 = v8.board.editors.sidebar:GetChildren()
+
+			for k34, v34 in children19 do
+				v34.TextColor3 = module.fx.sh.text.rgb.lightGray
+			end
+		end)
+
+		v11:FindFirstChild("image")
+		local changedSignal = v11:GetPropertyChangedSignal("TextColor3")
+
+		changedSignal:Connect(function()
+			v11.image.ImageColor3 = v11.TextColor3
+		end)
+
+		task.wait()
+	end
+end
+
+for k12, v12 in response.guis do
+	task.spawn(function()
+		local descendants = v12.board.editors.holster:GetDescendants()
+
+		for k13, v13 in descendants do
+			v13:FindFirstChild("field")
+
+			v13.MouseEnter:Connect(function()
+				v13.field:IsFocused()
+			end)
+
+			v13.MouseLeave:Connect(function()
+				v13.field:IsFocused()
+			end)
+
+			v13.field.FocusLost:Connect(function(enterPressed, inputObject)
+				v13.field.Visible = false
+			end)
+
+			task.wait()
+		end
+	end)
+end
+
+for k14, v14 in response.guis do
+	v14.board.utilities.players.search.field.Parent.MouseEnter:Connect(function()
+		v14.board.utilities.players.search.field.Parent.field:IsFocused()
+	end)
+
+	v14.board.utilities.players.search.field.Parent.MouseLeave:Connect(function()
+		v14.board.utilities.players.search.field.Parent.field:IsFocused()
+	end)
+
+	v14.board.utilities.players.search.field.Parent.field.FocusLost:Connect(function(enterPressed2, inputObject2)
+		v14.board.utilities.players.search.field.Parent.field.Visible = false
+	end)
+
+	local changedSignal2 = v14.board.utilities.players.search.field:GetPropertyChangedSignal("Text")
+
+	changedSignal2:Connect(function()
+		local children20 = v14.board.utilities.players.list.scroll:GetChildren()
+
+		for k35, v35 in children20 do
+			v35.fill.name.Text:lower()
+			v14.board.utilities.players.search.field.Text:lower()
+			v35.Visible = false
+		end
+
+		module.fx.sh.tools:checkScroll(v14.board.utilities.players.list.scroll, 1, true)
+	end)
+
+	v14.board.utilities.players.search.field.Focused:Connect(function()
+		v14.board.utilities.players.search.field:ReleaseFocus()
+		v14.board.utilities.players.search.field.Text = ""
+		local children21 = v14.board.utilities.players.list.scroll:GetChildren()
+
+		for k36, v36 in children21 do
+			v36.BackgroundColor3 = module.fx.sh.text.rgb.black
+		end
+
+		v14.board.utilities.players.buttons["continue"].FontFace = module.fx.sh.text.font.bold
+		v14.board.utilities.players.buttons["continue"].TextColor3 = module.fx.sh.text.rgb.lightGray
+		v14.board.utilities.players.data.Visible = false
+		v14.board.utilities.players.data.name.Text = ""
+		local userThumbnailAsync = Players:GetUserThumbnailAsync(0, Enum.ThumbnailType.AvatarThumbnail, Enum.ThumbnailSize.Size420x420)
+		v14.board.utilities.players.data.image.Image = userThumbnailAsync
+	end)
+
+	local children4 = v14.board.utilities.players.buttons:GetChildren()
+
+	for k15, v15 in children4 do
+		v15.MouseButton1Down:Connect(function(x7, y7)
+			-- [envlog] error: Script:1: attempt to index nil with 'connection'
+		end)
+	end
+end
+
+local function setupV3(v)
+	v.board.pill.buttons["return"].TextColor3 = module.fx.sh.text.rgb.darkRed
+	v.board.pill.buttons.alternative.TextColor3 = module.fx.sh.text.rgb.lightGray
+end
+
+local function setupV4(v)
+	v.board.pill.buttons["return"].TextColor3 = module.fx.sh.text.rgb.red
+	v.board.pill.buttons.alternative.TextColor3 = module.fx.sh.text.rgb.white
+end
+
+for k16, v16 in response.guis do
+	v16.board.extras.base.buttons.keybinds.MouseButton1Down:Connect(function(x8, y8)
+		setupV3(v16)
+		v16.board.utilities.help.Visible = true
+		local children22 = v16.board:GetChildren()
+
+		for k37, v37 in children22 do
+			v37.Visible = false
+		end
+
+		v16:GetAttribute("index")
+		v16.board.utilities.help.title.Text = "keybinds"
+		v16.board.utilities.help.line.gradient.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(((v16.board.utilities.help.title.TextBounds.X + 48) / 1278), 1), NumberSequenceKeypoint.new((((v16.board.utilities.help.title.TextBounds.X + 48) / 1278) + 0.003), 0), NumberSequenceKeypoint.new(1, 1) })
+		local result2 = string.format(module.fx.sh.helpText.searchable.keybinds, "<font color = 'rgb(100, 100, 100)'><b>none</b></font>"):gmatch("([^\r\n]*)[\r\n]?")
+
+		for k38, v38 in result2 do
+			local result3 = k38:gsub("^%s*(.-)%s*$", "%1")
+		end
+
+		v16.board.utilities.help.holster.scroll.label.Text = v16.board.utilities.help.holster.scroll.label.Text .. result3 .. ""
+		v16.board.utilities.help.holster.scroll.label.Size = UDim2.new(0.971, 0, 0, v16.board.utilities.help.holster.scroll.label.TextBounds.Y)
+	end)
+
+	v16:GetAttribute("index")
+
+	v16.board.extras.base.buttons.reorder.MouseButton1Down:Connect(function(x9, y9)
+		-- [envlog] error: Script:1: attempt to index nil with userdata
+	end)
+
+	v16.board.extras.base.help.search.field.Parent.MouseEnter:Connect(function()
+		v16.board.extras.base.help.search.field.Parent.field:IsFocused()
+	end)
+
+	v16.board.extras.base.help.search.field.Parent.MouseLeave:Connect(function()
+		v16.board.extras.base.help.search.field.Parent.field:IsFocused()
+	end)
+
+	v16.board.extras.base.help.search.field.Parent.field.FocusLost:Connect(function(enterPressed3, inputObject3)
+		v16.board.extras.base.help.search.field.Parent.field.Visible = false
+	end)
+
+	local changedSignal3 = v16.board.extras.base.help.search.field:GetPropertyChangedSignal("Text")
+
+	changedSignal3:Connect(function()
+		local children23 = v16.board.extras.base.help.holster.scroll:GetChildren()
+
+		for k39, v39 in children23 do
+			v16.board.extras.base.help.search.field.Text:lower()
+			v39.Visible = false
+		end
+
+		module.fx.sh.tools:checkScroll(v16.board.extras.base.help.holster.scroll, 1, true)
+	end)
+
+	v16.board.extras.base.help.search.field.Focused:Connect(function()
+		v16.board.extras.base.help.search.field:ReleaseFocus()
+		v16.board.extras.base.help.search.field.Text = ""
+	end)
+
+	v16.board.extras.base.help.search.field.Focused:Once(function()
+		for k40, v40 in module.fx.sh.helpText.searchable do
+			local clone = tagged[1].Parent.Parent.components.templates.gui.editables["value/editable"]:Clone()
+			clone.Name = k40
+			clone.Visible = false
+			clone.fill.Text = k40
+			clone.Parent = v16.board.extras.base.help.holster.scroll
+
+			clone.fill.MouseButton1Down:Connect(function(x16, y16)
+				v16.board.pill.buttons["return"].TextColor3 = module.fx.sh.text.rgb.darkRed
+				v16.board.pill.buttons.alternative.TextColor3 = module.fx.sh.text.rgb.lightGray
+				v16.board.utilities.help.Visible = true
+				local children30 = v16.board:GetChildren()
+
+				for k54, v54 in children30 do
+					v54.Visible = false
+				end
+
+				v16:GetAttribute("index")
+				v16.board.utilities.help.title.Text = k40
+				v16.board.utilities.help.line.gradient.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(((v16.board.utilities.help.title.TextBounds.X + 48) / 1278), 1), NumberSequenceKeypoint.new((((v16.board.utilities.help.title.TextBounds.X + 48) / 1278) + 0.003), 0), NumberSequenceKeypoint.new(1, 1) })
+				local result7 = string.format(module.fx.sh.helpText.searchable[798], ""):gmatch("([^\r\n]*)[\r\n]?")
+
+				for k55, v55 in result7 do
+					local result8 = k55:gsub("^%s*(.-)%s*$", "%1")
+				end
+
+				v16.board.utilities.help.holster.scroll.label.Text = "" .. result8 .. ""
+				v16.board.utilities.help.holster.scroll.label.Size = UDim2.new(0.971, 0, 0, v16.board.utilities.help.holster.scroll.label.TextBounds.Y)
+			end)
+		end
+	end)
+
+	v16.board.utilities.help["return"].MouseButton1Down:Connect(function(x10, y10)
+		v16.board.utilities.help.Visible = false
+		local children24 = v16.board:GetChildren()
+
+		for k41, v41 in children24 do
+			v41.Visible = false
+		end
+
+		setupV4(v16)
+		v16.board.utilities.help.holster.scroll.label.Text = ""
+	end)
+end
+
+for k17, v17 in response.guis do
+	v17.board.extras.base.buttons.whitelist.MouseButton1Down:Connect(function(x11, y11)
+		setupV3(v17)
+		local children25 = v17.board.extras.base.Parent:GetChildren()
+
+		for k42, v42 in children25 do
+			v42.Visible = false
+		end
+	end)
+
+	v17.board.extras.whitelist.buttons["return"].MouseButton1Down:Connect(function(x12, y12)
+		setupV4(v17)
+		local children26 = v17.board.extras.base.Parent:GetChildren()
+
+		for k43, v43 in children26 do
+			v43.Visible = false
+		end
+	end)
+
+	v17.board.extras.whitelist.buttons.users.MouseButton1Down:Connect(function(x13, y13)
+		for k44, v44 in response.users do
+		end
+
+		for k45, v45 in response.users do
+			Players:GetPlayerByUserId(k45)
+		end
+
+		setupV3(v17)
+		v17.board.utilities.help.Visible = true
+		local children27 = v17.board:GetChildren()
+
+		for k46, v46 in children27 do
+			v46.Visible = false
+		end
+
+		v17:GetAttribute("index")
+		v17.board.utilities.help.title.Text = "whitelist: users"
+		v17.board.utilities.help.line.gradient.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(((v17.board.utilities.help.title.TextBounds.X + 48) / 1278), 1), NumberSequenceKeypoint.new((((v17.board.utilities.help.title.TextBounds.X + 48) / 1278) + 0.003), 0), NumberSequenceKeypoint.new(1, 1) })
+		local result4 = string.format(module.fx.sh.helpText.searchable["whitelist: users"], "<proxy> - <proxy> - <DisplayName>."):gmatch("([^\r\n]*)[\r\n]?")
+
+		for k47, v47 in result4 do
+			local result5 = k47:gsub("^%s*(.-)%s*$", "%1")
+		end
+
+		v17.board.utilities.help.holster.scroll.label.Text = v17.board.utilities.help.holster.scroll.label.Text .. result5 .. ""
+		v17.board.utilities.help.holster.scroll.label.Size = UDim2.new(0.971, 0, 0, v17.board.utilities.help.holster.scroll.label.TextBounds.Y)
+	end)
+
+	local remove = v17.board.extras.whitelist.buttons:FindFirstChild("remove")
+
+	remove.MouseButton1Down:Connect(function(x14, y14)
+		setupV2(v17)
+		setupV3(v17)
+		v17.board.utilities.players.list.none.Text = "whitelisted players"
+		v17.board.utilities.players.Visible = true
+		local children28 = v17.board:GetChildren()
+
+		for k48, v48 in children28 do
+			v48.Visible = false
+		end
+
+		v17:GetAttribute("index")
+		local players = Players:GetPlayers()
+
+		for k49, v49 in players do
+			for k50, v50 in response.users do
+			end
+
+			v49.Name:lower()
+		end
+
+		module.fx.sh.tools:checkScroll(v17.board.utilities.players.list.scroll, 1)
+	end)
+
+	local offer = v17.board.extras.whitelist.buttons:FindFirstChild("offer")
+
+	offer.MouseButton1Down:Connect(function(x15, y15)
+		setupV2(v17)
+		setupV3(v17)
+		v17.board.utilities.players.list.none.Text = "unwhitelisted players"
+		v17.board.utilities.players.Visible = true
+		local children29 = v17.board:GetChildren()
+
+		for k51, v51 in children29 do
+			v51.Visible = false
+		end
+
+		v17:GetAttribute("index")
+		local players2 = Players:GetPlayers()
+
+		for k52, v52 in players2 do
+			for k53, v53 in response.users do
+			end
+
+			v52.Name:lower()
+			local clone2 = tagged[1].Parent.Parent.components.templates.gui.general.player:Clone()
+			local result6 = v52.Name:lower()
+			clone2.Name = "name: " .. result6
+			clone2.Parent = v17.board.utilities.players.list.scroll
+			clone2.fill.name.Text = v52.Name
+			clone2.fill["display name"].Text = v52.DisplayName
+
+			clone2.fill.MouseButton1Down:Connect(function(x17, y17)
+				v17.board.utilities.players.search.field.Text = ""
+				v17.board.utilities.players.list.scroll:GetChildren()
+				clone2.BackgroundColor3 = module.fx.sh.text.rgb.black
+				v17.board.utilities.players.buttons["continue"].FontFace = module.fx.sh.text.font.bold
+				v17.board.utilities.players.buttons["continue"].TextColor3 = module.fx.sh.text.rgb.lightGray
+				v17.board.utilities.players.data.Visible = false
+				v17.board.utilities.players.data.name.Text = ""
+				local userThumbnailAsync2 = Players:GetUserThumbnailAsync(0, Enum.ThumbnailType.AvatarThumbnail, Enum.ThumbnailSize.Size420x420)
+				v17.board.utilities.players.data.image.Image = userThumbnailAsync2
+			end)
+		end
+
+		module.fx.sh.tools:checkScroll(v17.board.utilities.players.list.scroll, 1)
+	end)
+end
+
+for k18, v18 in response.guis do
+	local minutesAfterMidnight = Lighting:GetMinutesAfterMidnight()
+	v18.board.extras.time.buttons.value.gradient.Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, module.fx.sh.text.rgb.black), ColorSequenceKeypoint.new(math.clamp(((math.abs(minutesAfterMidnight) / 1440) - 0.005), 0.001, 0.989), module.fx.sh.text.rgb.black), ColorSequenceKeypoint.new(math.clamp((math.abs(minutesAfterMidnight) / 1440), 0.006, 0.994), module.fx.sh.text.rgb.white), ColorSequenceKeypoint.new(math.clamp(((math.abs(minutesAfterMidnight) / 1440) + 0.005), 0.011, 0.999), module.fx.sh.text.rgb.black), ColorSequenceKeypoint.new(1, module.fx.sh.text.rgb.black) })
+	v18.board.extras.time.holster.clock.icon.Image = "rbxassetid://15229791229"
+end
