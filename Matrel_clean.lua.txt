@@ -1,0 +1,470 @@
+local players = game:GetService("Players")
+local workspace = game:GetService("Workspace")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local runService = game:GetService("RunService")
+local coreGui = game:GetService("CoreGui")
+local virtualInputManager = game:GetService("VirtualInputManager")
+local httpService = game:GetService("HttpService")
+local tweenService = game:GetService("TweenService")
+local rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+local localPlayer = players.LocalPlayer
+
+local function f1()
+  local v1 = {
+    STAMINA_VALUE = 100,
+    KILL_AURA_RANGE = 25,
+    ESP_COLOR = Color3.fromRGB(255, 0, 0),
+    ESP_ENABLED = true,
+    AUTO_PARRY_ENABLED = true,
+    NO_COOLDOWN_ENABLED = true,
+    KILL_AURA_ENABLED = true,
+    IMMUNITY_ENABLED = true,
+    HITBOX_ENABLED = true,
+    HITBOX_SIZE = 4,
+    HEALTH_GUI_ENABLED = true,
+  }
+
+  local function f2()
+    return localPlayer.Character or workspace:FindFirstChild(localPlayer.Name)
+  end
+
+  local function f3()
+    local v2 = f2()
+    return v2 and v2:FindFirstChildOfClass("Humanoid")
+  end
+
+  local function f4()
+    local v3 = f2()
+    return v3 and v3:FindFirstChild("HumanoidRootPart")
+  end
+
+  local function f5()
+    return replicatedStorage:FindFirstChild("Events")
+      and replicatedStorage.Events:FindFirstChild("CombatEvent")
+  end
+
+  local function f6()
+    local v4 = f2()
+
+    if not v4 then
+      return nil
+    end
+
+    for index, value in ipairs(v4:GetChildren()) do
+      if value:IsA("Tool") then
+        return value
+      end
+    end
+
+    return nil
+  end
+
+  local v5 = f5()
+
+  local function f7()
+    local v6 = f6()
+
+    if not v6 then
+      return
+    end
+
+    pcall(function() v6:Activate() end)
+
+    if v5 then
+      v5:FireServer("M1", v6.Name)
+      v5:FireServer("Attack", v6.Name)
+      v5:FireServer("Swing", v6.Name)
+    else
+      virtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+      virtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+    end
+  end
+
+  local function f8(p1)
+    local v7 = f4()
+
+    if not v7 then
+      return nil
+    else
+      local killAURARANGE = p1 or v1.KILL_AURA_RANGE
+      local v8 = nil
+
+      for index2, value2 in ipairs(players:GetPlayers()) do
+        if value2 ~= localPlayer and value2.Character then
+          local humanoidRootPart = value2.Character:FindFirstChild("HumanoidRootPart")
+
+          if humanoidRootPart then
+            local magnitude = (v7.Position - humanoidRootPart.Position).Magnitude
+
+            if magnitude < killAURARANGE then
+              killAURARANGE = magnitude
+              v8 = value2
+            end
+          end
+        end
+      end
+
+      return v8, killAURARANGE
+    end
+  end
+
+  local v9 = {}
+
+  task.spawn(function()
+    while true do
+      for index3, value3 in ipairs(players:GetPlayers()) do
+        if value3 ~= localPlayer and value3.Character then
+          local head = value3.Character:FindFirstChild("Head")
+
+          if head and head:IsA("BasePart") then
+            if not v9[head] then
+              v9[head] = {
+                Size = head.Size,
+                Transparency = head.Transparency,
+                CanCollide = head.CanCollide,
+                Massless = head.Massless,
+              }
+            end
+
+            if v1.HITBOX_ENABLED then
+              head.Size = Vector3.new(v1.HITBOX_SIZE, v1.HITBOX_SIZE, v1.HITBOX_SIZE)
+              head.Transparency = 0.6
+              head.CanCollide = false
+              head.Massless = true
+            else
+              local v10 = v9[head]
+
+              if v10 then
+                head.Size = v10.Size
+                head.Transparency = v10.Transparency
+                head.CanCollide = v10.CanCollide
+                head.Massless = v10.Massless
+              end
+            end
+          end
+        end
+      end
+
+      task.wait(0.1)
+    end
+  end)
+
+  local v11 = {}
+
+  local function f9(p2)
+    if v11[p2] then
+      if v11[p2].Parent then
+        v11[p2]:Destroy()
+      end
+
+      v11[p2] = nil
+    end
+  end
+
+  local function f10(p3)
+    local v12 = p3 == localPlayer or not v1.HEALTH_GUI_ENABLED
+    local humanoid, frame, textLabel
+
+    if v12 then
+      return
+    else
+      f9(p3)
+      local character = p3.Character
+
+      if not character then
+        return
+      else
+        local head2 = character:FindFirstChild("Head") or character:WaitForChild("Head", 3)
+
+        humanoid = character:FindFirstChildOfClass("Humanoid")
+          or character:WaitForChild("Humanoid", 3)
+
+        if not head2 or not humanoid then
+          return
+        else
+          local billboardGui = Instance.new("BillboardGui")
+          billboardGui.Name = "EchidnaHealthGUI_" .. p3.Name
+          billboardGui.Size = UDim2.new(0, 90, 0, 18)
+          billboardGui.StudsOffset = Vector3.new(0, 2.5, 0)
+          billboardGui.AlwaysOnTop = true
+          billboardGui.Adornee = head2
+          billboardGui.Parent = gethui and gethui() or coreGui
+
+          local frame2 = Instance.new("Frame")
+          frame2.Size = UDim2.new(1, 0, 1, 0)
+          frame2.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+          frame2.BorderSizePixel = 0
+          frame2.Parent = billboardGui
+
+          local uiCorner = Instance.new("UICorner")
+          uiCorner.CornerRadius = UDim.new(0, 4)
+          uiCorner.Parent = frame2
+
+          frame = Instance.new("Frame")
+
+          frame.Size = UDim2.new(math.clamp(
+            humanoid.Health / math.max(humanoid.MaxHealth, 1), 0, 1
+          ), 0, 1, 0)
+
+          frame.BackgroundColor3 = Color3.fromRGB(50, 220, 50)
+          frame.BorderSizePixel = 0
+          frame.Parent = frame2
+
+          local uiCorner2 = Instance.new("UICorner")
+          uiCorner2.CornerRadius = UDim.new(0, 4)
+          uiCorner2.Parent = frame
+
+          textLabel = Instance.new("TextLabel")
+          textLabel.Size = UDim2.new(1, 0, 1, 0)
+          textLabel.BackgroundTransparency = 1
+
+          textLabel.Text = math.floor(humanoid.Health) .. " / "
+            .. math.floor(humanoid.MaxHealth)
+
+          textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+          textLabel.Font = Enum.Font.SourceSansBold
+          textLabel.TextSize = 11
+          textLabel.Parent = frame2
+
+          local function f11(p4)
+            local v13 = math.clamp(p4 / math.max(humanoid.MaxHealth, 1), 0, 1)
+            frame.Size = UDim2.new(v13, 0, 1, 0)
+            textLabel.Text = math.floor(p4) .. " / " .. math.floor(humanoid.MaxHealth)
+
+            if v13 > 0.5 then
+              frame.BackgroundColor3 = Color3.fromRGB(50, 220, 50)
+            elseif v13 > 0.25 then
+              frame.BackgroundColor3 = Color3.fromRGB(230, 180, 40)
+            else
+              frame.BackgroundColor3 = Color3.fromRGB(230, 40, 40)
+            end
+          end
+
+          humanoid.HealthChanged:Connect(f11)
+          f11(humanoid.Health)
+          v11[p3] = billboardGui
+          return
+        end
+      end
+    end
+  end
+
+  local function f12(p5)
+    if p5 == localPlayer then
+      return
+    end
+
+    p5.CharacterAdded:Connect(function()
+      task.wait(0.5)
+      f10(p5)
+    end)
+
+    if p5.Character then
+      f10(p5)
+    end
+  end
+
+  local function f13()
+    for key, value4 in pairs(v11) do
+      f9(key)
+    end
+
+    if not v1.HEALTH_GUI_ENABLED then
+      return
+    end
+
+    for index4, value5 in ipairs(players:GetPlayers()) do
+      if value5 ~= localPlayer then
+        f10(value5)
+      end
+    end
+  end
+
+  for index5, value6 in ipairs(players:GetPlayers()) do
+    f12(value6)
+  end
+
+  players.PlayerAdded:Connect(f12)
+  players.PlayerRemoving:Connect(f9)
+
+  runService.Stepped:Connect(function()
+    if not v1.IMMUNITY_ENABLED then
+      return
+    else
+      local v14 = f3()
+
+      if v14 then
+        v14:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+        v14:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+        v14:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, false)
+
+        if v14.PlatformStand then
+          v14.PlatformStand = false
+        end
+
+        if v14.Sit then
+          v14.Sit = false
+        end
+      end
+
+      return
+    end
+  end)
+
+  task.spawn(function()
+    while true do
+      if v1.KILL_AURA_ENABLED then
+        if f2() and f6() then
+          local v15, v16 = f8(v1.KILL_AURA_RANGE)
+
+          if v15 and v16 <= v1.KILL_AURA_RANGE then
+            local v17 = f4()
+
+            local humanoidRootPart2 = v15.Character
+              and v15.Character:FindFirstChild("HumanoidRootPart")
+
+            if v17 and humanoidRootPart2 then
+              v17.CFrame = CFrame.new(v17.Position, Vector3.new(
+                humanoidRootPart2.Position.X, v17.Position.Y, humanoidRootPart2.Position.Z
+              ))
+
+              f7()
+            end
+          end
+        end
+      end
+
+      task.wait(0.01)
+    end
+  end)
+
+  local window = rayfield:CreateWindow({
+    Name = "Echidna Klase v11.0",
+    LoadingTitle = "Loading Echidna Engine...",
+    LoadingSubtitle = "Rayfield UI Interface",
+    ConfigurationSaving = { Enabled = true, FolderName = "EchidnaKlase", FileName = "Config" },
+    KeySystem = false,
+  })
+
+  local combatFeaturesTab = window:CreateTab("Combat Features", 4483362458)
+  local visualsUITab = window:CreateTab("Visuals & UI", 4483362458)
+  local playerTweaksTab = window:CreateTab("Player Tweaks", 4483362458)
+
+  combatFeaturesTab:CreateToggle({
+    Name = "Kill Aura",
+    CurrentValue = v1.KILL_AURA_ENABLED,
+    Flag = "KillAuraToggle",
+    Callback = function(value7) v1.KILL_AURA_ENABLED = value7 end,
+  })
+
+  combatFeaturesTab:CreateToggle({
+    Name = "Auto Parry",
+    CurrentValue = v1.AUTO_PARRY_ENABLED,
+    Flag = "AutoParryToggle",
+    Callback = function(value8) v1.AUTO_PARRY_ENABLED = value8 end,
+  })
+
+  combatFeaturesTab:CreateToggle({
+    Name = "No Cooldown",
+    CurrentValue = v1.NO_COOLDOWN_ENABLED,
+    Flag = "NoCooldownToggle",
+    Callback = function(value9) v1.NO_COOLDOWN_ENABLED = value9 end,
+  })
+
+  combatFeaturesTab:CreateToggle({
+    Name = "Hitbox Head Expansion (4x)",
+    CurrentValue = v1.HITBOX_ENABLED,
+    Flag = "HitboxToggle",
+    Callback = function(value10) v1.HITBOX_ENABLED = value10 end,
+  })
+
+  visualsUITab:CreateToggle({
+    Name = "Overhead Health Displays",
+    CurrentValue = v1.HEALTH_GUI_ENABLED,
+    Flag = "HealthGUIToggle",
+    Callback = function(value11)
+      v1.HEALTH_GUI_ENABLED = value11
+      f13()
+    end,
+  })
+
+  visualsUITab:CreateToggle({
+    Name = "Player ESP",
+    CurrentValue = v1.ESP_ENABLED,
+    Flag = "ESPToggle",
+    Callback = function(value12) v1.ESP_ENABLED = value12 end,
+  })
+
+  playerTweaksTab:CreateToggle({
+    Name = "Anti-Stun & Anti-Ragdoll",
+    CurrentValue = v1.IMMUNITY_ENABLED,
+    Flag = "ImmunityToggle",
+    Callback = function(value13) v1.IMMUNITY_ENABLED = value13 end,
+  })
+
+  rayfield:Notify({
+    Title = "Echidna Klase Ready",
+    Content = "All features and dynamic health monitoring active.",
+    Duration = 5,
+    Image = 4483362458,
+  })
+end
+
+local function f14()
+  return os.time(os.date("!*t"))
+end
+
+local v18 = "echidna_key_" .. localPlayer.UserId .. ".json"
+
+local function f15(key2)
+  local v19
+
+  if writefile then
+    v19 = { key = key2, timestamp = f14() }
+    pcall(function() writefile(v18, httpService:JSONEncode(v19)) end)
+  end
+end
+
+local function f16()
+  if isfile and isfile(v18) then
+    local v20, v21 = pcall(function() return httpService:JSONDecode(readfile(v18)) end)
+
+    if v20 and v21 and v21.key == "Matrel404" and v21.timestamp then
+      local v22 = f14() - v21.timestamp
+
+      if v22 >= 0 and v22 < 39600 then
+        return true
+      end
+
+      return false
+    end
+
+    return false
+  end
+
+  return false
+end
+
+if f16() then
+  f1()
+else
+  rayfield:CreateWindow({
+    Name = "Echidna Access Key System",
+    LoadingTitle = "Key Verification Required",
+    LoadingSubtitle = "Please authenticate below",
+    ConfigurationSaving = { Enabled = false },
+    KeySystem = true,
+    KeySettings = {
+      Title = "Echidna Verification",
+      Subtitle = "Link System",
+      Note = "Copy link or enter correct key.",
+      FileName = "EchidnaKey",
+      SaveKey = false,
+      GrabKeyFromSite = false,
+      Key = { "Matrel404" },
+    },
+  })
+
+  f15("Matrel404")
+  f1()
+end
