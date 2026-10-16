@@ -191,66 +191,7 @@ local function checkKey()
 end
 
 if not checkKey() then return end
-local Config = {
-    ClickTP=false, Gravity=196.2, JumpPower=50, WalkSpeed=16, TouchFling=false,
-    ESP=false, HealthESP=false, Tracers=false, BoxESP=false, LookLines=false,
-    TrackAll=false, TrackThickness=1.5, TrackBrightness=1,
-    Aimbot=false, FOV=false, FOVSize=120, Aimsmooth=0.2, AimPart="Head",
-    VisibleCheck=false, TeamCheck=true, Hitbox=false, HitboxSize=5,
-    BigHead=false, BigHeadSize=5, RapidFire=false, FireRate=100000,
-    AutoReload=false, NoRecoil=false, NoSpread=false, AntiFling=false,
-    TargetHighlight=false,
-}
 
-local TrackLines = {}
-
-local function notify(title, text)
-    pcall(function()
-        StarterGui:SetCore("SendNotification", {Title=tostring(title), Text=tostring(text), Duration=2})
-    end)
-end
-
-local function isEnemy(plr)
-    if not plr or plr==player then return false end
-    if Config.TeamCheck and plr.Team and player.Team and plr.Team==player.Team then return false end
-    return true
-end
-
-local function isVisible(part)
-    if not Config.VisibleCheck then return true end
-    local origin = camera.CFrame.Position
-    local dir = part.Position - origin
-    local params = RaycastParams.new()
-    params.FilterType = Enum.RaycastFilterType.Exclude
-    params.FilterDescendantsInstances = {player.Character, part.Parent}
-    local hit = workspace:Raycast(origin, dir, params)
-    return hit == nil
-end
-
-local function getAimPart(plr)
-    if not plr.Character then return nil end
-    if Config.AimPart=="Random" then
-        local parts = {}
-        for _,v in ipairs(plr.Character:GetChildren()) do
-            if v:IsA("BasePart") and v.Name~="HumanoidRootPart" then table.insert(parts,v) end
-        end
-        return #parts>0 and parts[math.random(1,#parts)] or nil
-    end
-    return plr.Character:FindFirstChild(Config.AimPart)
-end
-
-local function doPanic()
-    for k in pairs(Config) do
-        if type(Config[k])=="boolean" then Config[k]=false end
-    end
-    for _,v in pairs(TrackLines) do pcall(function() v:Remove() end) end
-    TrackLines = {}
-    notify("Panic","All systems disabled")
-end
-
--- ═══════════════════════════════════════════
---  GUI START
--- ═══════════════════════════════════════════
 local isMobile = UIS.TouchEnabled
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -353,13 +294,117 @@ MinBar.Size = UDim2.new(0,150,0,48)
 MinBar.Position = UDim2.new(0,20,0,80)
 MinBar.BackgroundColor3 = Color3.fromRGB(20,20,20)
 MinBar.Text = "azi_.x  ▸"
+local isMobile = UIS.TouchEnabled
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "AziMenu"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.IgnoreGuiInset = true
+ScreenGui.DisplayOrder = 999999
+ScreenGui.Parent = PlayerGui
+
+-- Spinning outline
+local function addSpinningOutline(parentFrame)
+    local outline = Instance.new("Frame")
+    outline.Name = "SpinOutline"
+    outline.Size = UDim2.new(1,4,1,4)
+    outline.Position = UDim2.new(0,-2,0,-2)
+    outline.BackgroundTransparency = 1
+    outline.ZIndex = math.max(0, parentFrame.ZIndex-1)
+    outline.Parent = parentFrame
+
+    local grad = Instance.new("UIGradient")
+    grad.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255,255,255)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(70,70,70)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(255,255,255)),
+    })
+    grad.Parent = outline
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Thickness = 1.5
+    stroke.Parent = outline
+    stroke.Color = Color3.fromRGB(255,255,255)
+
+    task.spawn(function()
+        while outline.Parent do
+            grad.Rotation = (grad.Rotation+2)%360
+            task.wait(0.03)
+        end
+    end)
+    return outline
+end
+
+-- ⚡ COMPACT MAIN — 300x360 (dati 350x470)
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 300, 0, 360)
+Main.Position = UDim2.new(0.5, -150, 0.5, -180)
+Main.BackgroundColor3 = Color3.fromRGB(12,12,12)
+Main.BorderSizePixel = 0
+Main.Active = false
+Main.Parent = ScreenGui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,14)
+addSpinningOutline(Main)
+
+-- ⚡ COMPACT TOP — 38 px (dati 48)
+local Top = Instance.new("Frame")
+Top.Size = UDim2.new(1,0,0,38)
+Top.BackgroundColor3 = Color3.fromRGB(20,20,20)
+Top.BorderSizePixel = 0
+Top.Active = true
+Top.Parent = Main
+Instance.new("UICorner", Top).CornerRadius = UDim.new(0,14)
+
+local TopTitle = Instance.new("TextLabel")
+TopTitle.Size = UDim2.new(1,-90,1,0)
+TopTitle.Position = UDim2.new(0,12,0,0)
+TopTitle.BackgroundTransparency = 1
+TopTitle.Text = "azi_.x"
+TopTitle.TextColor3 = Color3.new(1,1,1)
+TopTitle.Font = Enum.Font.GothamBold
+TopTitle.TextSize = 13
+TopTitle.TextXAlignment = Enum.TextXAlignment.Left
+TopTitle.Parent = Top
+
+-- ⚡ Compact buttons 32x32 (dati 42x42) — tappable pa rin
+local MinBtn = Instance.new("TextButton")
+MinBtn.Size = UDim2.new(0,32,0,32)
+MinBtn.Position = UDim2.new(1,-70,0,3)
+MinBtn.BackgroundColor3 = Color3.fromRGB(45,45,45)
+MinBtn.Text = "—"
+MinBtn.TextColor3 = Color3.new(1,1,1)
+MinBtn.Font = Enum.Font.GothamBold
+MinBtn.TextSize = 18
+MinBtn.AutoButtonColor = true
+MinBtn.Parent = Top
+Instance.new("UICorner", MinBtn).CornerRadius = UDim.new(0,8)
+
+local CloseX = Instance.new("TextButton")
+CloseX.Size = UDim2.new(0,32,0,32)
+CloseX.Position = UDim2.new(1,-36,0,3)
+CloseX.BackgroundColor3 = Color3.fromRGB(45,45,45)
+CloseX.Text = "X"
+CloseX.TextColor3 = Color3.new(1,1,1)
+CloseX.Font = Enum.Font.GothamBold
+CloseX.TextSize = 16
+CloseX.AutoButtonColor = true
+CloseX.Parent = Top
+Instance.new("UICorner", CloseX).CornerRadius = UDim.new(0,8)
+
+-- Minimize bar
+local MinBar = Instance.new("TextButton")
+MinBar.Size = UDim2.new(0,130,0,38)
+MinBar.Position = UDim2.new(0,20,0,80)
+MinBar.BackgroundColor3 = Color3.fromRGB(20,20,20)
+MinBar.Text = "azi_.x  ▸"
 MinBar.TextColor3 = Color3.new(1,1,1)
 MinBar.Font = Enum.Font.GothamBold
-MinBar.TextSize = 15
+MinBar.TextSize = 13
 MinBar.Visible = false
 MinBar.Active = true
 MinBar.Parent = ScreenGui
-Instance.new("UICorner", MinBar).CornerRadius = UDim.new(0,12)
+Instance.new("UICorner", MinBar).CornerRadius = UDim.new(0,10)
 addSpinningOutline(MinBar)
 
 MinBtn.MouseButton1Click:Connect(function() Main.Visible=false MinBar.Visible=true end)
@@ -385,23 +430,93 @@ do
     end)
 end
 
--- Sidebar
-local Side = Instance.new("Frame")
-Side.Size = UDim2.new(0,124,1,-48)
-Side.Position = UDim2.new(0,0,0,48)
-Side.BackgroundColor3 = Color3.fromRGB(15,15,15)
+-- ⚡ SIDEBAR — horizontal tabs sa ilalim ng Top para di vertical
+local Side = Instance.new("ScrollingFrame")
+Side.Size = UDim2.new(1,0,0,38)
+Side.Position = UDim2.new(0,0,0,38)
+Side.BackgroundColor3 = Color3.fromRGB(18,18,18)
 Side.BorderSizePixel = 0
+Side.ScrollBarThickness = 0
+Side.ScrollingDirection = Enum.ScrollingDirection.X
+Side.CanvasSize = UDim2.new(0,0,0,0)
+Side.AutomaticCanvasSize = Enum.AutomaticSize.X
 Side.ZIndex = 2
 Side.Parent = Main
 
+local sideLayout = Instance.new("UIListLayout")
+sideLayout.FillDirection = Enum.FillDirection.Horizontal
+sideLayout.Padding = UDim.new(0,4)
+sideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+sideLayout.Parent = Side
+
+local sidePad = Instance.new("UIPadding")
+sidePad.PaddingLeft = UDim.new(0,6)
+sidePad.PaddingRight = UDim.new(0,6)
+sidePad.PaddingTop = UDim.new(0,4)
+sidePad.PaddingBottom = UDim.new(0,4)
+sidePad.Parent = Side
+
+-- ⚡ CONTENT — mas mataas na ngayon kasi hindi na sakop ng sidebar
 local Content = Instance.new("Frame")
-Content.Size = UDim2.new(1,-128,1,-52)
-Content.Position = UDim2.new(0,126,0,50)
+Content.Size = UDim2.new(1,-8,1,-84)
+Content.Position = UDim2.new(0,4,0,80)
 Content.BackgroundColor3 = Color3.fromRGB(14,14,14)
 Content.BorderSizePixel = 0
 Content.ZIndex = 1
 Content.Parent = Main
 Instance.new("UICorner", Content).CornerRadius = UDim.new(0,10)
+
+-- ⚡ PAGES — compact, auto-size canvas
+local tabNames = {"Main","Visual","Executor","Scripts","Combat","Setting","Player info","Credits"}
+local pages, tabButtons = {}, {}
+
+for _,n in ipairs(tabNames) do
+    local sc = Instance.new("ScrollingFrame")
+    sc.Name = n
+    sc.Size = UDim2.new(1,-6,1,-6)
+    sc.Position = UDim2.new(0,3,0,3)
+    sc.BackgroundTransparency = 1
+    sc.ScrollBarThickness = 4
+    sc.ScrollBarImageColor3 = Color3.fromRGB(255,255,255)
+    sc.CanvasSize = UDim2.new(0,0,0,0)
+    sc.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    sc.Visible = false
+    sc.Active = true
+    sc.Parent = Content
+    pages[n] = sc
+end
+
+local function switchTab(name)
+    for _,p in pairs(pages) do p.Visible=false end
+    for n,b in pairs(tabButtons) do
+        b.BackgroundColor3 = Color3.fromRGB(24,24,24)
+        b.TextColor3 = Color3.fromRGB(210,210,210)
+    end
+    if pages[name] then pages[name].Visible=true end
+    if tabButtons[name] then
+        tabButtons[name].BackgroundColor3 = Color3.fromRGB(255,255,255)
+        tabButtons[name].TextColor3 = Color3.fromRGB(0,0,0)
+    end
+end
+
+-- ⚡ Horizontal tab buttons (mas compact)
+for i,n in ipairs(tabNames) do
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(0,70,0,30)
+    b.BackgroundColor3 = Color3.fromRGB(24,24,24)
+    b.BorderSizePixel = 0
+    b.Text = n
+    b.TextColor3 = Color3.fromRGB(210,210,210)
+    b.Font = Enum.Font.GothamBold
+    b.TextSize = 11
+    b.AutoButtonColor = true
+    b.LayoutOrder = i
+    b.Parent = Side
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+    tabButtons[n] = b
+    b.MouseButton1Click:Connect(function() switchTab(n) end)
+end
+switchTab("Main")
 local tabNames = {"Main","Visual","Executor","Scripts","Combat","Setting","Player info","Credits"}
 local pages, tabButtons = {}, {}
 
