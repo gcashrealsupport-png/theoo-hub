@@ -1,0 +1,410 @@
+-- Damage + RateOfFire Changer — two separate sliders/toggles (1 – 1e14)
+-- LocalScript in StarterPlayerScripts (or executor)
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+
+local MIN_VALUE = 1
+local MAX_VALUE = 100000000000000
+
+-- FLOATING ICON
+
+local floatingIcon = Instance.new("ScreenGui")
+floatingIcon.Name = "FloatingIconUI"
+floatingIcon.ResetOnSpawn = false
+floatingIcon.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+floatingIcon.Parent = player:WaitForChild("PlayerGui")
+
+local iconBtn = Instance.new("TextButton")
+iconBtn.Size = UDim2.new(0, 50, 0, 50)
+iconBtn.Position = UDim2.new(0, 20, 0.5, -25)
+iconBtn.BackgroundColor3 = Color3.fromRGB(14, 14, 16)
+iconBtn.Text = "⚡"
+iconBtn.TextColor3 = Color3.fromRGB(235, 235, 240)
+iconBtn.TextSize = 24
+iconBtn.Font = Enum.Font.GothamBold
+iconBtn.BorderSizePixel = 0
+iconBtn.Active = true
+iconBtn.Draggable = true
+iconBtn.Parent = floatingIcon
+Instance.new("UICorner", iconBtn).CornerRadius = UDim.new(0, 12)
+
+local iconStroke = Instance.new("UIStroke")
+iconStroke.Color = Color3.fromRGB(38, 38, 42)
+iconStroke.Thickness = 1
+iconStroke.Parent = iconBtn
+
+-- REUSABLE PANEL BUILDER
+
+local function buildPanel(name, titleText, attrNames, pos, defaultVal)
+    local state = {
+        value = defaultVal,
+        enabled = true,
+        attrNames = attrNames,
+    }
+
+    local gui = Instance.new("ScreenGui")
+    gui.Name = name .. "UI"
+    gui.ResetOnSpawn = false
+    gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    gui.Parent = player:WaitForChild("PlayerGui")
+
+    local main = Instance.new("Frame")
+    main.Size = UDim2.new(0, 300, 0, 176)
+    main.Position = pos
+    main.BackgroundColor3 = Color3.fromRGB(14, 14, 16)
+    main.BorderSizePixel = 0
+    main.Active = true
+    main.Draggable = true
+    main.Parent = gui
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0, 14)
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(38, 38, 42)
+    stroke.Thickness = 1
+    stroke.Parent = main
+
+    local topBar = Instance.new("Frame")
+    topBar.Size = UDim2.new(1, 0, 0, 36)
+    topBar.BackgroundTransparency = 1
+    topBar.Parent = main
+
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, -60, 0, 20)
+    title.Position = UDim2.new(0, 14, 0, 9)
+    title.BackgroundTransparency = 1
+    title.Text = titleText
+    title.TextColor3 = Color3.fromRGB(235, 235, 240)
+    title.TextXAlignment = Enum.TextXAlignment.Left
+    title.Font = Enum.Font.GothamBold
+    title.TextSize = 14
+    title.Parent = topBar
+
+    local dot = Instance.new("Frame")
+    dot.Size = UDim2.new(0, 8, 0, 8)
+    dot.Position = UDim2.new(1, -22, 0, 14)
+    dot.BackgroundColor3 = Color3.fromRGB(120, 220, 140)
+    dot.BorderSizePixel = 0
+    dot.Parent = topBar
+    Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+
+    local divider = Instance.new("Frame")
+    divider.Size = UDim2.new(1, -28, 0, 1)
+    divider.Position = UDim2.new(0, 14, 0, 36)
+    divider.BackgroundColor3 = Color3.fromRGB(30, 30, 34)
+    divider.BorderSizePixel = 0
+    divider.Parent = main
+
+    local valueBox = Instance.new("TextBox")
+    valueBox.Size = UDim2.new(1, -28, 0, 34)
+    valueBox.Position = UDim2.new(0, 14, 0, 46)
+    valueBox.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+    valueBox.Text = tostring(state.value)
+    valueBox.TextColor3 = Color3.fromRGB(235, 235, 240)
+    valueBox.Font = Enum.Font.Code
+    valueBox.TextSize = 15
+    valueBox.BorderSizePixel = 0
+    valueBox.ClearTextOnFocus = false
+    valueBox.Parent = main
+    Instance.new("UICorner", valueBox).CornerRadius = UDim.new(0, 8)
+
+    local vStroke = Instance.new("UIStroke")
+    vStroke.Color = Color3.fromRGB(38, 38, 44)
+    vStroke.Thickness = 1
+    vStroke.Parent = valueBox
+
+    local track = Instance.new("TextButton")
+    track.Size = UDim2.new(1, -28, 0, 10)
+    track.Position = UDim2.new(0, 14, 0, 94)
+    track.BackgroundColor3 = Color3.fromRGB(28, 28, 32)
+    track.Text = ""
+    track.AutoButtonColor = false
+    track.BorderSizePixel = 0
+    track.Parent = main
+    Instance.new("UICorner", track).CornerRadius = UDim.new(1, 0)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new(0, 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(220, 220, 230)
+    fill.BorderSizePixel = 0
+    fill.Parent = track
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
+
+    local knob = Instance.new("Frame")
+    knob.Size = UDim2.new(0, 14, 0, 14)
+    knob.Position = UDim2.new(0, 0, 0.5, -7)
+    knob.BackgroundColor3 = Color3.fromRGB(245, 245, 250)
+    knob.BorderSizePixel = 0
+    knob.Parent = track
+    Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
+
+    local minLabel = Instance.new("TextLabel")
+    minLabel.Size = UDim2.new(0, 60, 0, 14)
+    minLabel.Position = UDim2.new(0, 14, 0, 108)
+    minLabel.BackgroundTransparency = 1
+    minLabel.Text = "1"
+    minLabel.TextColor3 = Color3.fromRGB(100, 100, 110)
+    minLabel.TextXAlignment = Enum.TextXAlignment.Left
+    minLabel.Font = Enum.Font.Code
+    minLabel.TextSize = 10
+    minLabel.Parent = main
+
+    local maxLabel = Instance.new("TextLabel")
+    maxLabel.Size = UDim2.new(0, 120, 0, 14)
+    maxLabel.Position = UDim2.new(1, -134, 0, 108)
+    maxLabel.BackgroundTransparency = 1
+    maxLabel.Text = "1e14"
+    maxLabel.TextColor3 = Color3.fromRGB(100, 100, 110)
+    maxLabel.TextXAlignment = Enum.TextXAlignment.Right
+    maxLabel.Font = Enum.Font.Code
+    maxLabel.TextSize = 10
+    maxLabel.Parent = main
+
+    local toggleBtn = Instance.new("TextButton")
+    toggleBtn.Size = UDim2.new(1, -28, 0, 30)
+    toggleBtn.Position = UDim2.new(0, 14, 1, -42)
+    toggleBtn.BackgroundColor3 = Color3.fromRGB(22, 22, 26)
+    toggleBtn.Text = "ENABLED"
+    toggleBtn.TextColor3 = Color3.fromRGB(160, 230, 180)
+    toggleBtn.Font = Enum.Font.GothamBold
+    toggleBtn.TextSize = 12
+    toggleBtn.BorderSizePixel = 0
+    toggleBtn.Parent = main
+    Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(0, 8)
+
+    local tStroke = Instance.new("UIStroke")
+    tStroke.Color = Color3.fromRGB(38, 60, 44)
+    tStroke.Thickness = 1
+    tStroke.Parent = toggleBtn
+
+    -- HELPERS
+
+    local function clamp(v)
+        if v < MIN_VALUE then return MIN_VALUE end
+        if v > MAX_VALUE then return MAX_VALUE end
+        return v
+    end
+
+    local function toSlider(v)
+        local lv = math.log(v) / math.log(10)
+        return math.clamp(lv / 14, 0, 1)
+    end
+
+    local function fromSlider(t)
+        t = math.clamp(t, 0, 1)
+        return math.floor(10 ^ (t * 14))
+    end
+
+    local function updateVisuals()
+        local t = toSlider(state.value)
+        fill.Size = UDim2.new(t, 0, 1, 0)
+        knob.Position = UDim2.new(t, -7, 0.5, -7)
+        if not valueBox:IsFocused() then
+            valueBox.Text = tostring(state.value)
+        end
+    end
+
+    local function applyToTool(tool)
+        if not state.enabled then return end
+        local changed = false
+        for _, n in ipairs(state.attrNames) do
+            if tool:GetAttribute(n) ~= nil then
+                tool:SetAttribute(n, state.value)
+                changed = true
+            end
+        end
+        if not changed then
+            tool:SetAttribute(state.attrNames[1], state.value)
+        end
+    end
+
+    local function applyAll()
+        if not state.enabled then return end
+        local char = player.Character
+        if char then
+            for _, c in ipairs(char:GetChildren()) do
+                if c:IsA("Tool") then applyToTool(c) end
+            end
+        end
+        local bp = player:FindFirstChildOfClass("Backpack")
+        if bp then
+            for _, c in ipairs(bp:GetChildren()) do
+                if c:IsA("Tool") then applyToTool(c) end
+            end
+        end
+    end
+
+    local function setValue(v)
+        state.value = clamp(math.floor(v))
+        updateVisuals()
+        applyAll()
+    end
+
+    -- SLIDER DRAG
+
+    local dragging = false
+
+    local function sliderFromInput(input)
+        local relX = input.Position.X - track.AbsolutePosition.X
+        local t = math.clamp(relX / track.AbsoluteSize.X, 0, 1)
+        setValue(fromSlider(t))
+    end
+
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            sliderFromInput(input)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+            sliderFromInput(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+
+    -- VALUE BOX
+
+    valueBox.FocusLost:Connect(function()
+        local n = tonumber(valueBox.Text)
+        if n then
+            setValue(n)
+        else
+            valueBox.Text = tostring(state.value)
+        end
+    end)
+
+    -- TOGGLE
+
+    local function setEnabled(s)
+        state.enabled = s
+        if s then
+            toggleBtn.Text = "ENABLED"
+            toggleBtn.TextColor3 = Color3.fromRGB(160, 230, 180)
+            tStroke.Color = Color3.fromRGB(38, 60, 44)
+            dot.BackgroundColor3 = Color3.fromRGB(120, 220, 140)
+            applyAll()
+        else
+            toggleBtn.Text = "DISABLED"
+            toggleBtn.TextColor3 = Color3.fromRGB(230, 160, 160)
+            tStroke.Color = Color3.fromRGB(60, 38, 38)
+            dot.BackgroundColor3 = Color3.fromRGB(200, 90, 90)
+        end
+    end
+
+    toggleBtn.MouseButton1Click:Connect(function()
+        setEnabled(not state.enabled)
+    end)
+
+    -- WATCH TOOLS
+
+    local function watch(container)
+        if not container then return end
+        for _, c in ipairs(container:GetChildren()) do
+            if c:IsA("Tool") then applyToTool(c) end
+        end
+        container.ChildAdded:Connect(function(c)
+            if c:IsA("Tool") then applyToTool(c) end
+        end)
+    end
+
+    if player.Character then watch(player.Character) end
+    if player:FindFirstChildOfClass("Backpack") then watch(player:FindFirstChildOfClass("Backpack")) end
+
+    player.CharacterAdded:Connect(watch)
+    player.ChildAdded:Connect(function(c)
+        if c:IsA("Backpack") then watch(c) end
+    end)
+
+    updateVisuals()
+    setEnabled(true)
+
+    return {
+        frame = main,
+        setEnabled = setEnabled,
+        isEnabled = function() return state.enabled end,
+    }
+end
+
+-- BUILD PANELS
+
+local rofPanel = buildPanel(
+    "ROF",
+    "RateOfFire",
+    {"RateOfFire", "rateOfFire"},
+    UDim2.new(0, 24, 0, 24),
+    10000
+)
+
+local dmgPanel = buildPanel(
+    "DMG",
+    "Damage",
+    {"Damage", "damage"},
+    UDim2.new(0, 344, 0, 24),
+    100
+)
+
+-- FLOATING ICON FUNCTIONALITY
+
+iconBtn.MouseButton1Click:Connect(function()
+    rofPanel.frame.Visible = not rofPanel.frame.Visible
+    dmgPanel.frame.Visible = not dmgPanel.frame.Visible
+end)
+
+-- Drag functionality for floating icon
+local draggingIcon = false
+local dragStartPos = nil
+local iconStartPos = nil
+
+iconBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        draggingIcon = true
+        dragStartPos = input.Position
+        iconStartPos = iconBtn.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if draggingIcon and (input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStartPos
+        iconBtn.Position = UDim2.new(
+            iconStartPos.X.Scale,
+            iconStartPos.X.Offset + delta.X,
+            iconStartPos.Y.Scale,
+            iconStartPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        draggingIcon = false
+    end
+end)
+
+-- KEYBINDS
+
+UserInputService.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then
+        rofPanel.frame.Visible = not rofPanel.frame.Visible
+        dmgPanel.frame.Visible = not dmgPanel.frame.Visible
+    elseif input.KeyCode == Enum.KeyCode.RightControl then
+        rofPanel.setEnabled(not rofPanel.isEnabled())
+        dmgPanel.setEnabled(not dmgPanel.isEnabled())
+    end
+end)
