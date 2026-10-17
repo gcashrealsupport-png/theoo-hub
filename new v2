@@ -1,0 +1,934 @@
+--[[
+  ALKEDION COOL GUI + JUT HUB SPLASH — PART 1/3
+  Services + Settings + Cleanup + Splash + Cool GUI Shell + Tabs + Helpers
+  I-paste muna ito sa Delta, tapos Part 2, tapos Part 3.
+]]
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local LP = Players.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+local AimAssist = false
+local Aimbot = false
+local Lock = false
+local ESP = false
+local Wall = false
+local HideFOV = false
+local TeamCheck = true
+local WalkSpeed = 16
+local Noclip = false
+local InfJump = false
+local RapidFire = false
+local AutoReload = false
+local NoRecoil = false
+local RapidRate = 1000
+local TargetPart = "Head"
+local FOV = 150
+local SmoothAim = 25
+local SmoothAssist = 50
+local Target = nil
+local Excluded = {}
+
+--==================================================
+-- CLEAN
+--==================================================
+
+pcall(function() RunService:UnbindFromRenderStep("ALKEDION_AIM") end)
+local old = PG:FindFirstChild("AlkedionPvP"); if old then old:Destroy() end
+local oldESP = workspace:FindFirstChild("AlkedionESP"); if oldESP then oldESP:Destroy() end
+local oldSplash = PG:FindFirstChild("JutHubSplash"); if oldSplash then oldSplash:Destroy() end
+
+--==================================================
+-- JUT HUB SPLASH SCREEN
+--==================================================
+
+local Splash = Instance.new("ScreenGui")
+Splash.Name = "JutHubSplash"
+Splash.ResetOnSpawn = false
+Splash.IgnoreGuiInset = true
+Splash.DisplayOrder = 999
+Splash.Parent = PG
+
+local SplashFrame = Instance.new("Frame")
+SplashFrame.Size = UDim2.fromScale(1,1)
+SplashFrame.BackgroundColor3 = Color3.fromRGB(10,10,15)
+SplashFrame.BorderSizePixel = 0
+SplashFrame.Parent = Splash
+
+local Pumpkin = Instance.new("TextLabel")
+Pumpkin.Size = UDim2.fromOffset(100,100)
+Pumpkin.Position = UDim2.new(0.5, -50, 0.5, -100)
+Pumpkin.BackgroundTransparency = 1
+Pumpkin.Text = "🎃"
+Pumpkin.TextSize = 80
+Pumpkin.Font = Enum.Font.GothamBold
+Pumpkin.TextColor3 = Color3.fromRGB(255,150,50)
+Pumpkin.Parent = SplashFrame
+
+local WelcomeText = Instance.new("TextLabel")
+WelcomeText.Size = UDim2.new(1,0,0,50)
+WelcomeText.Position = UDim2.new(0,0,0.5,10)
+WelcomeText.BackgroundTransparency = 1
+WelcomeText.Text = "Welcome to Jut Hub"
+WelcomeText.TextColor3 = Color3.fromRGB(255,255,255)
+WelcomeText.TextSize = 24
+WelcomeText.Font = Enum.Font.GothamBold
+WelcomeText.TextXAlignment = Enum.TextXAlignment.Center
+WelcomeText.Parent = SplashFrame
+
+local SubText = Instance.new("TextLabel")
+SubText.Size = UDim2.new(1,0,0,30)
+SubText.Position = UDim2.new(0,0,0.5,55)
+SubText.BackgroundTransparency = 1
+SubText.Text = "Alkedion PvP"
+SubText.TextColor3 = Color3.fromRGB(180,180,190)
+SubText.TextSize = 14
+SubText.Font = Enum.Font.Gotham
+SubText.TextXAlignment = Enum.TextXAlignment.Center
+SubText.Parent = SplashFrame
+
+local LoadingBar = Instance.new("Frame")
+LoadingBar.Size = UDim2.fromOffset(200,4)
+LoadingBar.Position = UDim2.new(0.5, -100, 0.5, 110)
+LoadingBar.BackgroundColor3 = Color3.fromRGB(40,40,50)
+LoadingBar.BorderSizePixel = 0
+LoadingBar.Parent = SplashFrame
+Instance.new("UICorner", LoadingBar).CornerRadius = UDim.new(1,0)
+
+local LoadingFill = Instance.new("Frame")
+LoadingFill.Size = UDim2.fromScale(0,1)
+LoadingFill.BackgroundColor3 = Color3.fromRGB(255,150,50)
+LoadingFill.BorderSizePixel = 0
+LoadingFill.Parent = LoadingBar
+Instance.new("UICorner", LoadingFill).CornerRadius = UDim.new(1,0)
+
+TweenService:Create(LoadingFill, TweenInfo.new(2.5, Enum.EasingStyle.Linear), {
+    Size = UDim2.fromScale(1,1)
+}):Play()
+
+task.spawn(function()
+    local bounce = true
+    while Splash.Parent and bounce do
+        TweenService:Create(Pumpkin, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            Position = UDim2.new(0.5, -50, 0.5, -110)
+        }):Play()
+        task.wait(0.5)
+        TweenService:Create(Pumpkin, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            Position = UDim2.new(0.5, -50, 0.5, -100)
+        }):Play()
+        task.wait(0.5)
+    end
+end)
+
+--==================================================
+-- COOL GUI (hidden initially)
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "AlkedionPvP"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = PG
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(260, 300)
+Main.Position = UDim2.new(0, 12, 0.5, -150)
+Main.BackgroundColor3 = Color3.fromRGB(15,15,20)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Visible = false
+Main.Parent = Gui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,10)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(70,70,85)
+Stroke.Thickness = 1.5
+Stroke.Parent = Main
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,34)
+Header.BackgroundColor3 = Color3.fromRGB(20,20,27)
+Header.BorderSizePixel = 0
+Header.Active = true
+Header.Parent = Main
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0,10)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-40,1,0)
+Title.Position = UDim2.fromOffset(10,0)
+Title.BackgroundTransparency = 1
+Title.Text = "🎃 Alkedion PvP"
+Title.TextColor3 = Color3.fromRGB(200,200,255)
+Title.TextSize = 13
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Min = Instance.new("TextButton")
+Min.Size = UDim2.fromOffset(22,22)
+Min.Position = UDim2.new(1,-28,0,6)
+Min.BackgroundColor3 = Color3.fromRGB(35,35,45)
+Min.Text = "—"
+Min.TextColor3 = Color3.fromRGB(200,200,255)
+Min.TextSize = 13
+Min.Font = Enum.Font.GothamBold
+Min.Parent = Header
+Instance.new("UICorner", Min).CornerRadius = UDim.new(0,5)
+
+local Side = Instance.new("Frame")
+Side.Size = UDim2.fromOffset(60, 266)
+Side.Position = UDim2.fromOffset(0, 34)
+Side.BackgroundColor3 = Color3.fromRGB(18,18,24)
+Side.BorderSizePixel = 0
+Side.Parent = Main
+Instance.new("UICorner", Side).CornerRadius = UDim.new(0,0)
+
+local Content = Instance.new("Frame")
+Content.Size = UDim2.new(1, -64, 1, -38)
+Content.Position = UDim2.fromOffset(62, 36)
+Content.BackgroundColor3 = Color3.fromRGB(20,20,27)
+Content.BorderSizePixel = 0
+Content.Parent = Main
+Instance.new("UICorner", Content).CornerRadius = UDim.new(0,8)
+
+local tabNames = { "Aim", "Movement", "Combat" }
+local pages = {}
+local tabButtons = {}
+
+for i, name in ipairs(tabNames) do
+    local sc = Instance.new("ScrollingFrame")
+    sc.Name = name
+    sc.Size = UDim2.new(1,-6,1,-6)
+    sc.Position = UDim2.fromOffset(3,3)
+    sc.BackgroundTransparency = 1
+    sc.BorderSizePixel = 0
+    sc.ScrollBarThickness = 2
+    sc.CanvasSize = UDim2.new()
+    sc.Visible = false
+    sc.Parent = Content
+    pages[name] = sc
+
+    local list = Instance.new("UIListLayout")
+    list.Padding = UDim.new(0,3)
+    list.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    list.Parent = sc
+
+    local pad = Instance.new("UIPadding")
+    pad.PaddingBottom = UDim.new(0,4)
+    pad.Parent = sc
+
+    list:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        task.defer(function()
+            sc.CanvasSize = UDim2.fromOffset(0, list.AbsoluteContentSize.Y + 6)
+        end)
+    end)
+end
+
+local function switchTab(name)
+    for _, p in pairs(pages) do p.Visible = false end
+    for _, b in pairs(tabButtons) do
+        b.BackgroundColor3 = Color3.fromRGB(25,25,33)
+        b.TextColor3 = Color3.fromRGB(150,150,160)
+    end
+    if pages[name] then pages[name].Visible = true end
+    if tabButtons[name] then
+        tabButtons[name].BackgroundColor3 = Color3.fromRGB(35,35,48)
+        tabButtons[name].TextColor3 = Color3.fromRGB(200,200,255)
+    end
+end
+
+for i, name in ipairs(tabNames) do
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1,-6,0,30)
+    b.Position = UDim2.fromOffset(3, 3 + (i-1)*33)
+    b.BackgroundColor3 = Color3.fromRGB(25,25,33)
+    b.BorderSizePixel = 0
+    b.Text = name
+    b.TextColor3 = Color3.fromRGB(150,150,160)
+    b.TextSize = 10
+    b.Font = Enum.Font.GothamBold
+    b.Parent = Side
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,6)
+    tabButtons[name] = b
+    b.Activated:Connect(function() switchTab(name) end)
+end
+switchTab("Aim")
+
+local function Button(parent, text)
+    local b = Instance.new("TextButton")
+    b.Size = UDim2.new(1,-4,0,24)
+    b.BackgroundColor3 = Color3.fromRGB(30,30,40)
+    b.BorderSizePixel = 0
+    b.Text = text
+    b.TextColor3 = Color3.fromRGB(220,220,230)
+    b.TextSize = 10
+    b.Font = Enum.Font.GothamMedium
+    b.Parent = parent
+    Instance.new("UICorner", b).CornerRadius = UDim.new(0,5)
+    return b
+end
+
+local function SetButton(b, on, name)
+    b.Text = name .. "  [" .. (on and "ON" or "OFF") .. "]"
+    b.BackgroundColor3 = on and Color3.fromRGB(40,120,70) or Color3.fromRGB(30,30,40)
+    b.TextColor3 = on and Color3.fromRGB(255,255,255) or Color3.fromRGB(220,220,230)
+end
+
+local function Slider(parent, name, minV, maxV, default, cb)
+    local wrap = Instance.new("Frame")
+    wrap.Size = UDim2.new(1,-4,0,32)
+    wrap.BackgroundColor3 = Color3.fromRGB(26,26,35)
+    wrap.BorderSizePixel = 0
+    wrap.Parent = parent
+    Instance.new("UICorner", wrap).CornerRadius = UDim.new(0,5)
+
+    local lab = Instance.new("TextLabel")
+    lab.Size = UDim2.new(1,-50,0,14)
+    lab.Position = UDim2.fromOffset(6,0)
+    lab.BackgroundTransparency = 1
+    lab.Text = name
+    lab.TextColor3 = Color3.fromRGB(180,180,190)
+    lab.TextSize = 9
+    lab.Font = Enum.Font.Gotham
+    lab.TextXAlignment = Enum.TextXAlignment.Left
+    lab.Parent = wrap
+
+    local val = Instance.new("TextLabel")
+    val.Size = UDim2.fromOffset(44,14)
+    val.Position = UDim2.new(1,-50,0,0)
+    val.BackgroundTransparency = 1
+    val.Text = tostring(default)
+    val.TextColor3 = Color3.fromRGB(200,200,255)
+    val.TextSize = 9
+    val.Font = Enum.Font.GothamBold
+    val.Parent = wrap
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1,-12,0,6)
+    track.Position = UDim2.fromOffset(6,18)
+    track.BackgroundColor3 = Color3.fromRGB(45,45,55)
+    track.BorderSizePixel = 0
+    track.Parent = wrap
+    Instance.new("UICorner", track).CornerRadius = UDim.new(1,0)
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((default-minV)/math.max(maxV-minV,1), 0, 1, 0)
+    fill.BackgroundColor3 = Color3.fromRGB(100,120,220)
+    fill.BorderSizePixel = 0
+    fill.Parent = track
+    Instance.new("UICorner", fill).CornerRadius = UDim.new(1,0)
+
+    local dragging = false
+    local function setA(a)
+        a = math.clamp(a, 0, 1)
+        local v = minV + (maxV-minV)*a
+        v = math.floor(v)
+        v = math.clamp(v, minV, maxV)
+        fill.Size = UDim2.new((v-minV)/math.max(maxV-minV,1), 0, 1, 0)
+        val.Text = tostring(v)
+        cb(v)
+    end
+    setA((default-minV)/math.max(maxV-minV,1))
+
+    track.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            setA((i.Position.X - track.AbsolutePosition.X) / math.max(track.AbsoluteSize.X, 1))
+        end
+    end)
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    end)
+    UIS.InputChanged:Connect(function(i)
+        if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+            setA((i.Position.X - track.AbsolutePosition.X) / math.max(track.AbsoluteSize.X, 1))
+        end
+    end)
+end
+
+local Circle = Instance.new("Frame")
+Circle.AnchorPoint = Vector2.new(.5,.5)
+Circle.Position = UDim2.fromScale(.5,.5)
+Circle.Size = UDim2.fromOffset(FOV*2, FOV*2)
+Circle.BackgroundTransparency = 1
+Circle.Visible = false
+Circle.ZIndex = 5
+Circle.Parent = Gui
+Instance.new("UICorner", Circle).CornerRadius = UDim.new(1,0)
+local CircleStroke = Instance.new("UIStroke")
+CircleStroke.Color = Color3.fromRGB(200,200,255)
+CircleStroke.Thickness = 1.5
+CircleStroke.Transparency = .3
+CircleStroke.Parent = Circle
+
+local function UpdateFOV()
+    Circle.Size = UDim2.fromOffset(FOV*2, FOV*2)
+    Circle.Visible = (Aimbot or AimAssist) and not HideFOV
+end
+
+print("[Alkedion] Part 1 loaded — Splash + Cool GUI shell")
+--[[
+  ALKEDION COOL GUI + JUT HUB SPLASH — PART 2/3
+  Aim Tab + Movement Tab + Combat Tab + Minimize + Fade-out Splash
+  I-paste pagkatapos ng Part 1.
+--]]
+
+--==================================================
+-- AIM TAB
+--==================================================
+
+do
+    local p = pages["Aim"]
+
+    local TeamBtn = Button(p, "TEAM CHECK  [ON]")
+    TeamBtn.BackgroundColor3 = Color3.fromRGB(40,120,70)
+    TeamBtn.Activated:Connect(function()
+        TeamCheck = not TeamCheck
+        SetButton(TeamBtn, TeamCheck, "TEAM CHECK")
+        Target = nil
+    end)
+
+    local AssistBtn = Button(p, "AIM ASSIST  [OFF]")
+    AssistBtn.Activated:Connect(function()
+        AimAssist = not AimAssist
+        SetButton(AssistBtn, AimAssist, "AIM ASSIST")
+        UpdateFOV()
+        if not AimAssist then Target = nil end
+    end)
+
+    local AimBtn = Button(p, "AIMBOT  [OFF]")
+    AimBtn.Activated:Connect(function()
+        Aimbot = not Aimbot
+        SetButton(AimBtn, Aimbot, "AIMBOT")
+        UpdateFOV()
+        if not Aimbot then Target = nil end
+    end)
+
+    local LockBtn = Button(p, "STRONG LOCK  [OFF]")
+    LockBtn.Activated:Connect(function()
+        Lock = not Lock
+        SetButton(LockBtn, Lock, "STRONG LOCK")
+        if not Lock then Target = nil end
+    end)
+
+    local TargetBtn = Button(p, "TARGET  •  HEAD")
+    TargetBtn.Activated:Connect(function()
+        TargetPart = TargetPart == "Head" and "UpperTorso" or "Head"
+        TargetBtn.Text = "TARGET  •  " .. (TargetPart == "Head" and "HEAD" or "UPPER TORSO")
+        Target = nil
+    end)
+
+    Slider(p, "AIMBOT SMOOTH", 1, 100, 25, function(v) SmoothAim = v end)
+    Slider(p, "ASSIST SMOOTH", 1, 100, 50, function(v) SmoothAssist = v end)
+    Slider(p, "FOV", 50, 500, 150, function(v) FOV = v; UpdateFOV() end)
+
+    local HideBtn = Button(p, "HIDE FOV  [OFF]")
+    HideBtn.Activated:Connect(function()
+        HideFOV = not HideFOV
+        SetButton(HideBtn, HideFOV, "HIDE FOV")
+        UpdateFOV()
+    end)
+end
+
+--==================================================
+-- MOVEMENT TAB
+--==================================================
+
+do
+    local p = pages["Movement"]
+
+    Slider(p, "WALKSPEED", 1, 300, 16, function(v)
+        WalkSpeed = v
+        local char = LP.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = v end
+        end
+    end)
+
+    local NoclipBtn = Button(p, "NOCLIP  [OFF]")
+    NoclipBtn.Activated:Connect(function()
+        Noclip = not Noclip
+        SetButton(NoclipBtn, Noclip, "NOCLIP")
+        if Noclip then
+            local char = LP.Character
+            if char then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+            end
+        else
+            local char = LP.Character
+            if char then
+                for _, part in ipairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = true end
+                end
+            end
+        end
+    end)
+
+    local InfJumpBtn = Button(p, "INF JUMP  [OFF]")
+    InfJumpBtn.Activated:Connect(function()
+        InfJump = not InfJump
+        SetButton(InfJumpBtn, InfJump, "INF JUMP")
+    end)
+
+    UIS.JumpRequest:Connect(function()
+        if InfJump then
+            local char = LP.Character
+            if char then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+            end
+        end
+    end)
+end
+
+--==================================================
+-- COMBAT TAB
+--==================================================
+
+do
+    local p = pages["Combat"]
+
+    local ESPBtn = Button(p, "ESP  [OFF]")
+    ESPBtn.Activated:Connect(function()
+        ESP = not ESP
+        SetButton(ESPBtn, ESP, "ESP")
+    end)
+
+    local WallBtn = Button(p, "WALL CHECK  [OFF]")
+    WallBtn.Activated:Connect(function()
+        Wall = not Wall
+        SetButton(WallBtn, Wall, "WALL CHECK")
+        Target = nil
+    end)
+
+    local RapidBtn = Button(p, "RAPID FIRE  [OFF]")
+    RapidBtn.Activated:Connect(function()
+        RapidFire = not RapidFire
+        SetButton(RapidBtn, RapidFire, "RAPID FIRE")
+        if not RapidFire then
+            local char = LP.Character
+            if char then
+                for _, tool in ipairs(char:GetChildren()) do
+                    if tool:IsA("Tool") then
+                        local nv = tool:FindFirstChild("RateOfFire") or tool:FindFirstChild("FireRate")
+                        if nv and nv:IsA("NumberValue") then nv.Value = 0.1 end
+                    end
+                end
+            end
+        end
+    end)
+
+    Slider(p, "FIRE RATE", 1, 1000, 1000, function(v) RapidRate = v end)
+
+    local AutoReloadBtn = Button(p, "AUTO RELOAD  [OFF]")
+    AutoReloadBtn.Activated:Connect(function()
+        AutoReload = not AutoReload
+        SetButton(AutoReloadBtn, AutoReload, "AUTO RELOAD")
+    end)
+
+    local NoRecoilBtn = Button(p, "NO RECOIL  [OFF]")
+    NoRecoilBtn.Activated:Connect(function()
+        NoRecoil = not NoRecoil
+        SetButton(NoRecoilBtn, NoRecoil, "NO RECOIL")
+    end)
+end
+
+--==================================================
+-- MINIMIZE
+--==================================================
+
+local minimized = false
+Min.Activated:Connect(function()
+    minimized = not minimized
+    Content.Visible = not minimized
+    Side.Visible = not minimized
+    if minimized then
+        Main.Size = UDim2.fromOffset(260,34)
+        Min.Text = "+"
+    else
+        Main.Size = UDim2.fromOffset(260,300)
+        Min.Text = "—"
+    end
+end)
+
+--==================================================
+-- FADE OUT SPLASH (3s)
+--==================================================
+
+task.spawn(function()
+    task.wait(3)
+    TweenService:Create(SplashFrame, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(Pumpkin, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+    TweenService:Create(WelcomeText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+    TweenService:Create(SubText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+    TweenService:Create(LoadingBar, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+    TweenService:Create(LoadingFill, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+    task.wait(0.6)
+    Splash:Destroy()
+    Main.Visible = true
+end)
+
+print("[Alkedion] Part 2 loaded — Tabs + Splash fade-out")
+--[[
+  ALKEDION COOL GUI + JUT HUB SPLASH — PART 3/3
+  Drag + Helpers + Team Check + Aimbot/Aim Assist + ESP + Main Loop
+  I-paste pagkatapos ng Part 2. Ito na ang huling part.
+--]]
+
+--==================================================
+-- DRAG
+--==================================================
+
+local function Drag(Object, Handle)
+    local dragging = false
+    local startInput, startPos
+    Handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            startInput = input.Position
+            startPos = Object.Position
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if not dragging then return end
+        if input.UserInputType ~= Enum.UserInputType.MouseMovement
+            and input.UserInputType ~= Enum.UserInputType.Touch then return end
+        local delta = input.Position - startInput
+        Object.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end)
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
+Drag(Main, Header)
+
+--==================================================
+-- CHARACTER HELPERS
+--==================================================
+
+local function Alive(char)
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    return hum and hum.Health > 0
+end
+
+local function GetPart(char)
+    if not char then return nil end
+    if TargetPart == "Head" then
+        return char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+    end
+    return char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart")
+end
+
+local function SameTeam(p)
+    if not TeamCheck then return false end
+    if not p or p == LP then return false end
+    return LP.Team and p.Team and LP.Team == p.Team
+end
+
+local function Visible(char, part)
+    if not Wall then return true end
+    if not Camera then return false end
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    local ignore = {}
+    if LP.Character then table.insert(ignore, LP.Character) end
+    params.FilterDescendantsInstances = ignore
+    local origin = Camera.CFrame.Position
+    local direction = part.Position - origin
+    local result = workspace:Raycast(origin, direction, params)
+    return not result or result.Instance:IsDescendantOf(char)
+end
+
+local function DistanceFromCenter(part)
+    local screen, onScreen = Camera:WorldToViewportPoint(part.Position)
+    if not onScreen or screen.Z <= 0 then return math.huge end
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    return (Vector2.new(screen.X, screen.Y) - center).Magnitude
+end
+
+local function Valid(p)
+    if not p or p == LP then return false end
+    if Excluded[p] == true then return false end
+    if SameTeam(p) then return false end
+    if not p.Character or not Alive(p.Character) then return false end
+    local part = GetPart(p.Character)
+    if not part then return false end
+    if DistanceFromCenter(part) > FOV then return false end
+    if not Visible(p.Character, part) then return false end
+    return true
+end
+
+local function Closest()
+    local best, bestDist = nil, FOV
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LP and Excluded[p] ~= true and not SameTeam(p) and p.Character and Alive(p.Character) then
+            local part = GetPart(p.Character)
+            if part then
+                local d = DistanceFromCenter(part)
+                if d <= bestDist and Visible(p.Character, part) then
+                    bestDist = d
+                    best = p
+                end
+            end
+        end
+    end
+    return best
+end
+
+--==================================================
+-- ESP
+--==================================================
+
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "AlkedionESP"
+ESPFolder.Parent = workspace
+local ESPData = {}
+
+local function RemoveESP(p)
+    local d = ESPData[p]
+    if d then
+        if d.Highlight then d.Highlight:Destroy() end
+        if d.NameGui then d.NameGui:Destroy() end
+        ESPData[p] = nil
+    end
+end
+
+local function MakeESP(p)
+    if p == LP or Excluded[p] == true or SameTeam(p) or not p.Character then return end
+    RemoveESP(p)
+    local char = p.Character
+    local h = Instance.new("Highlight")
+    h.Adornee = char
+    h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+    h.FillTransparency = .55
+    h.OutlineTransparency = 0
+    h.Enabled = ESP
+    h.Parent = ESPFolder
+    local head = char:FindFirstChild("Head")
+    local nameGui = Instance.new("BillboardGui")
+    nameGui.Adornee = head
+    nameGui.Size = UDim2.fromOffset(120,22)
+    nameGui.StudsOffset = Vector3.new(0,3,0)
+    nameGui.AlwaysOnTop = true
+    nameGui.Enabled = ESP
+    nameGui.Parent = ESPFolder
+    local text = Instance.new("TextLabel")
+    text.Size = UDim2.fromScale(1,1)
+    text.BackgroundTransparency = 1
+    text.Text = p.DisplayName
+    text.TextColor3 = Color3.new(1,1,1)
+    text.TextStrokeTransparency = .2
+    text.TextSize = 10
+    text.Font = Enum.Font.GothamBold
+    text.Parent = nameGui
+    ESPData[p] = { Highlight = h, NameGui = nameGui }
+end
+
+local function UpdateESP()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LP then
+            if Excluded[p] == true or SameTeam(p) then
+                if ESPData[p] then RemoveESP(p) end
+            elseif ESP then
+                if not ESPData[p] then MakeESP(p) end
+                local d = ESPData[p]
+                if d and p.Character then
+                    d.Highlight.Adornee = p.Character
+                    d.Highlight.Enabled = true
+                    local head = p.Character:FindFirstChild("Head")
+                    if head then d.NameGui.Adornee = head end
+                    d.NameGui.Enabled = true
+                end
+            elseif ESPData[p] then
+                ESPData[p].Highlight.Enabled = false
+                ESPData[p].NameGui.Enabled = false
+            end
+        end
+    end
+end
+
+--==================================================
+-- PLAYER EVENTS
+--==================================================
+
+Players.PlayerRemoving:Connect(function(p)
+    RemoveESP(p)
+    Excluded[p] = nil
+    if Target == p then Target = nil end
+end)
+
+--==================================================
+-- APPLY LOOPS
+--==================================================
+
+local function ApplyRapidFire()
+    if not RapidFire then return end
+    local char = LP.Character
+    if not char then return end
+    local function Apply(tool)
+        tool:SetAttribute("RateOfFire", RapidRate)
+        tool:SetAttribute("rateOfFire", RapidRate)
+        local nv = tool:FindFirstChild("RateOfFire") or tool:FindFirstChild("FireRate")
+        if nv and nv:IsA("NumberValue") then nv.Value = RapidRate end
+    end
+    for _, tool in ipairs(char:GetChildren()) do
+        if tool:IsA("Tool") then Apply(tool) end
+    end
+    local bp = LP:FindFirstChildOfClass("Backpack")
+    if bp then for _, tool in ipairs(bp:GetChildren()) do if tool:IsA("Tool") then Apply(tool) end end end
+end
+
+local function ApplyAutoReload()
+    if not AutoReload then return end
+    local char = LP.Character
+    if not char then return end
+    local function Apply(tool)
+        for _, v in ipairs(tool:GetDescendants()) do
+            if v:IsA("NumberValue") and v.Name:lower():find("ammo") then v.Value = 9999 end
+        end
+    end
+    for _, tool in ipairs(char:GetChildren()) do
+        if tool:IsA("Tool") then Apply(tool) end
+    end
+    local bp = LP:FindFirstChildOfClass("Backpack")
+    if bp then for _, tool in ipairs(bp:GetChildren()) do if tool:IsA("Tool") then Apply(tool) end end end
+end
+
+local function ApplyNoRecoil()
+    if not NoRecoil then return end
+    local char = LP.Character
+    if not char then return end
+    local function Apply(tool)
+        for _, v in ipairs(tool:GetDescendants()) do
+            if v:IsA("NumberValue") and (v.Name:lower():find("recoil") or v.Name:lower():find("spread")) then
+                v.Value = 0
+            end
+        end
+    end
+    for _, tool in ipairs(char:GetChildren()) do
+        if tool:IsA("Tool") then Apply(tool) end
+    end
+    local bp = LP:FindFirstChildOfClass("Backpack")
+    if bp then for _, tool in ipairs(bp:GetChildren()) do if tool:IsA("Tool") then Apply(tool) end end end
+end
+
+local function ApplyNoclip()
+    if not Noclip then return end
+    local char = LP.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") and part.CanCollide then
+            part.CanCollide = false
+        end
+    end
+end
+
+local function ApplyWalkSpeed()
+    local char = LP.Character
+    if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if hum and hum.WalkSpeed ~= WalkSpeed then
+        hum.WalkSpeed = WalkSpeed
+    end
+end
+
+--==================================================
+-- MAIN LOOP
+--==================================================
+
+RunService:BindToRenderStep(
+    "ALKEDION_AIM",
+    Enum.RenderPriority.Camera.Value + 10,
+    function()
+        Camera = workspace.CurrentCamera
+        if not Camera then return end
+
+        UpdateFOV()
+        UpdateESP()
+        ApplyRapidFire()
+        ApplyAutoReload()
+        ApplyNoRecoil()
+        ApplyNoclip()
+        ApplyWalkSpeed()
+
+        if AimAssist and not Aimbot then
+            local t = Closest()
+            if t and Valid(t) then
+                local part = GetPart(t.Character)
+                if part then
+                    local desired = CFrame.lookAt(Camera.CFrame.Position, part.Position)
+                    local alpha = math.clamp(SmoothAssist/100, .01, 1)
+                    Camera.CFrame = Camera.CFrame:Lerp(desired, alpha)
+                    Target = t
+                end
+            else
+                Target = nil
+            end
+        end
+
+        if Aimbot then
+            if Lock then
+                if not Valid(Target) then Target = Closest() end
+            else
+                Target = Closest()
+            end
+
+            if Target and Valid(Target) then
+                local part = GetPart(Target.Character)
+                if part then
+                    local desired = CFrame.lookAt(Camera.CFrame.Position, part.Position)
+                    local alpha = math.clamp(SmoothAim/100, .01, 1)
+                    Camera.CFrame = Camera.CFrame:Lerp(desired, alpha)
+                end
+            else
+                Target = nil
+            end
+        end
+
+        if not AimAssist and not Aimbot then
+            Target = nil
+        end
+    end
+)
+
+--==================================================
+-- Q KEY
+--==================================================
+
+UIS.InputBegan:Connect(function(input, processed)
+    if processed then return end
+    if input.KeyCode == Enum.KeyCode.Q then
+        Aimbot = not Aimbot
+        for _, child in ipairs(pages["Aim"]:GetChildren()) do
+            if child:IsA("TextButton") and child.Text:find("AIMBOT") then
+                SetButton(child, Aimbot, "AIMBOT")
+            end
+        end
+        UpdateFOV()
+        if not Aimbot then Target = nil end
+    end
+end)
+
+print("ALKEDION COOL GUI + JUT HUB SPLASH LOADED")
+print("Splash: 🎃 Welcome to Jut Hub (3s)")
+print("Main GUI: Aim | Movement | Combat tabs")
