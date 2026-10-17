@@ -1,0 +1,1060 @@
+--[[
+  ALKEDION PVP v2 — PART 1/3
+  Services + Settings + Cleanup + GUI Shell + FOV circle
+  I-paste muna ito sa Delta, tapos Part 2, tapos Part 3.
+]]
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local LP = Players.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+
+--==================================================
+-- SETTINGS
+--==================================================
+
+local Aim = false
+local Lock = false
+local ESP = false
+local Wall = false
+local HideFOV = false
+local TeamCheck = false
+local GodMode = false
+local RapidFire = false
+local AutoReload = false
+local NoRecoil = false
+local Hitbox = false
+local RapidRate = 1000
+local HitboxSize = 10
+
+local TargetPart = "Head"
+local FOV = 150
+local Smooth = 25
+local Target = nil
+local Excluded = {}
+
+--==================================================
+-- CLEAN
+--==================================================
+
+pcall(function()
+	RunService:UnbindFromRenderStep("ALKEDION_AIM")
+end)
+
+local old = PG:FindFirstChild("AlkedionPvP")
+if old then old:Destroy() end
+
+local oldESP = workspace:FindFirstChild("AlkedionESP")
+if oldESP then oldESP:Destroy() end
+
+local oldHB = workspace:FindFirstChild("AlkedionHitbox")
+if oldHB then oldHB:Destroy() end
+
+--==================================================
+-- GUI
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "AlkedionPvP"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = PG
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(205,530)
+Main.Position = UDim2.new(0,12,.5,-265)
+Main.BackgroundColor3 = Color3.fromRGB(18,18,23)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Parent = Gui
+
+Instance.new("UICorner",Main).CornerRadius = UDim.new(0,9)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(55,55,65)
+Stroke.Parent = Main
+
+--==================================================
+-- HEADER
+--==================================================
+
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,40)
+Header.BackgroundTransparency = 1
+Header.Active = true
+Header.Parent = Main
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-45,1,0)
+Title.Position = UDim2.fromOffset(9,0)
+Title.BackgroundTransparency = 1
+Title.Text = "Alkedion PvP v2"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.TextSize = 15
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Min = Instance.new("TextButton")
+Min.Size = UDim2.fromOffset(27,25)
+Min.Position = UDim2.new(1,-34,0,7)
+Min.BackgroundColor3 = Color3.fromRGB(32,32,40)
+Min.Text = "—"
+Min.TextColor3 = Color3.new(1,1,1)
+Min.TextSize = 15
+Min.Font = Enum.Font.GothamBold
+Min.Parent = Header
+
+Instance.new("UICorner",Min).CornerRadius = UDim.new(0,6)
+
+--==================================================
+-- CONTENT
+--==================================================
+
+local Content = Instance.new("ScrollingFrame")
+Content.Size = UDim2.new(1,-8,1,-45)
+Content.Position = UDim2.fromOffset(4,42)
+Content.BackgroundTransparency = 1
+Content.BorderSizePixel = 0
+Content.ScrollBarThickness = 2
+Content.CanvasSize = UDim2.new()
+Content.Parent = Main
+
+local List = Instance.new("UIListLayout")
+List.Padding = UDim.new(0,4)
+List.HorizontalAlignment = Enum.HorizontalAlignment.Center
+List.Parent = Content
+
+local Pad = Instance.new("UIPadding")
+Pad.PaddingBottom = UDim.new(0,5)
+Pad.Parent = Content
+
+local function Canvas()
+	task.defer(function()
+		Content.CanvasSize = UDim2.fromOffset(0, List.AbsoluteContentSize.Y + 8)
+	end)
+end
+
+List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(Canvas)
+
+local function Button(text)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(1,-6,0,29)
+	b.BackgroundColor3 = Color3.fromRGB(29,29,37)
+	b.BorderSizePixel = 0
+	b.Text = text
+	b.TextColor3 = Color3.new(1,1,1)
+	b.TextSize = 11
+	b.Font = Enum.Font.GothamMedium
+	b.Parent = Content
+	Instance.new("UICorner",b).CornerRadius = UDim.new(0,6)
+	return b
+end
+
+local function SetButton(b,on,name)
+	b.Text = name .. "  [" .. (on and "ON" or "OFF") .. "]"
+	b.BackgroundColor3 = on and Color3.fromRGB(35,105,65) or Color3.fromRGB(29,29,37)
+end
+
+--==================================================
+-- FOV CIRCLE
+--==================================================
+
+local Circle = Instance.new("Frame")
+Circle.AnchorPoint = Vector2.new(.5,.5)
+Circle.Position = UDim2.fromScale(.5,.5)
+Circle.Size = UDim2.fromOffset(FOV*2,FOV*2)
+Circle.BackgroundTransparency = 1
+Circle.Visible = false
+Circle.ZIndex = 5
+Circle.Parent = Gui
+
+Instance.new("UICorner",Circle).CornerRadius = UDim.new(1,0)
+
+local CircleStroke = Instance.new("UIStroke")
+CircleStroke.Color = Color3.new(1,1,1)
+CircleStroke.Thickness = 2
+CircleStroke.Transparency = .2
+CircleStroke.Parent = Circle
+
+local function UpdateFOV()
+	Circle.Size = UDim2.fromOffset(FOV*2,FOV*2)
+	Circle.Visible = Aim and not HideFOV
+end
+
+print("[Alkedion] Part 1 loaded")
+--[[
+  ALKEDION PVP v2 — PART 2/3
+  Buttons + Inputs (FOV, Smooth, Rate, Hitbox) + Exclude Players + Minimize + Drag
+  I-paste pagkatapos ng Part 1.
+--]]
+
+--==================================================
+-- TOGGLE BUTTONS
+--==================================================
+
+local AimBtn = Button("AIMBOT  [OFF]")
+AimBtn.Activated:Connect(function()
+	Aim = not Aim
+	SetButton(AimBtn,Aim,"AIMBOT")
+	if not Aim then Target = nil end
+	UpdateFOV()
+end)
+
+local LockBtn = Button("STRONG LOCK  [OFF]")
+LockBtn.Activated:Connect(function()
+	Lock = not Lock
+	SetButton(LockBtn,Lock,"STRONG LOCK")
+	if not Lock then Target = nil end
+end)
+
+local TargetBtn = Button("TARGET  •  HEAD")
+TargetBtn.Activated:Connect(function()
+	if TargetPart == "Head" then
+		TargetPart = "UpperTorso"
+		TargetBtn.Text = "TARGET  •  UPPER TORSO"
+	else
+		TargetPart = "Head"
+		TargetBtn.Text = "TARGET  •  HEAD"
+	end
+	Target = nil
+end)
+
+local ESPBtn = Button("ESP  [OFF]")
+ESPBtn.Activated:Connect(function()
+	ESP = not ESP
+	SetButton(ESPBtn,ESP,"ESP")
+end)
+
+local WallBtn = Button("WALL CHECK  [OFF]")
+WallBtn.Activated:Connect(function()
+	Wall = not Wall
+	SetButton(WallBtn,Wall,"WALL CHECK")
+	Target = nil
+end)
+
+local TeamBtn = Button("TEAM CHECK  [OFF]")
+TeamBtn.Activated:Connect(function()
+	TeamCheck = not TeamCheck
+	SetButton(TeamBtn,TeamCheck,"TEAM CHECK")
+	Target = nil
+end)
+
+local HideBtn = Button("HIDE FOV  [OFF]")
+HideBtn.Activated:Connect(function()
+	HideFOV = not HideFOV
+	SetButton(HideBtn,HideFOV,"HIDE FOV")
+	UpdateFOV()
+end)
+
+--==================================================
+-- GODMODE
+--==================================================
+
+local GodBtn = Button("GODMODE  [OFF]")
+GodBtn.Activated:Connect(function()
+	GodMode = not GodMode
+	SetButton(GodBtn,GodMode,"GODMODE")
+end)
+
+--==================================================
+-- RAPID FIRE
+--==================================================
+
+local RapidBtn = Button("RAPID FIRE  [OFF]")
+RapidBtn.Activated:Connect(function()
+	RapidFire = not RapidFire
+	SetButton(RapidBtn,RapidFire,"RAPID FIRE")
+	if not RapidFire then
+		local char = LP.Character
+		if char then
+			for _,tool in ipairs(char:GetChildren()) do
+				if tool:IsA("Tool") then
+					local nv = tool:FindFirstChild("RateOfFire") or tool:FindFirstChild("FireRate")
+					if nv and nv:IsA("NumberValue") then nv.Value = 0.1 end
+				end
+			end
+		end
+	end
+end)
+
+--==================================================
+-- AUTO RELOAD
+--==================================================
+
+local AutoReloadBtn = Button("AUTO RELOAD  [OFF]")
+AutoReloadBtn.Activated:Connect(function()
+	AutoReload = not AutoReload
+	SetButton(AutoReloadBtn,AutoReload,"AUTO RELOAD")
+end)
+
+--==================================================
+-- NO RECOIL
+--==================================================
+
+local NoRecoilBtn = Button("NO RECOIL  [OFF]")
+NoRecoilBtn.Activated:Connect(function()
+	NoRecoil = not NoRecoil
+	SetButton(NoRecoilBtn,NoRecoil,"NO RECOIL")
+end)
+
+--==================================================
+-- HITBOX EXPANDER
+--==================================================
+
+local HitboxBtn = Button("HITBOX EXPANDER  [OFF]")
+HitboxBtn.Activated:Connect(function()
+	Hitbox = not Hitbox
+	SetButton(HitboxBtn,Hitbox,"HITBOX EXPANDER")
+	if not Hitbox then
+		local hb = workspace:FindFirstChild("AlkedionHitbox")
+		if hb then
+			for _,v in ipairs(hb:GetChildren()) do
+				v:Destroy()
+			end
+		end
+		for p, _ in pairs(HitboxData) do
+			RemoveHitbox(p)
+		end
+	end
+end)
+
+local HBFrame = Instance.new("Folder")
+HBFrame.Name = "AlkedionHitbox"
+HBFrame.Parent = workspace
+
+--==================================================
+-- INPUTS
+--==================================================
+
+local function Input(name,value)
+	local row = Instance.new("Frame")
+	row.Size = UDim2.new(1,-6,0,29)
+	row.BackgroundColor3 = Color3.fromRGB(25,25,32)
+	row.BorderSizePixel = 0
+	row.Parent = Content
+	Instance.new("UICorner",row).CornerRadius = UDim.new(0,6)
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1,-75,1,0)
+	label.Position = UDim2.fromOffset(8,0)
+	label.BackgroundTransparency = 1
+	label.Text = name
+	label.TextColor3 = Color3.new(1,1,1)
+	label.TextSize = 10
+	label.Font = Enum.Font.GothamMedium
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = row
+
+	local box = Instance.new("TextBox")
+	box.Size = UDim2.fromOffset(60,23)
+	box.Position = UDim2.new(1,-66,.5,-11)
+	box.BackgroundColor3 = Color3.fromRGB(35,35,43)
+	box.BorderSizePixel = 0
+	box.Text = tostring(value)
+	box.TextColor3 = Color3.new(1,1,1)
+	box.TextSize = 10
+	box.Font = Enum.Font.Gotham
+	box.ClearTextOnFocus = false
+	box.Parent = row
+
+	Instance.new("UICorner",box).CornerRadius = UDim.new(0,5)
+	return box
+end
+
+local FOVBox = Input("FOV",150)
+local SmoothBox = Input("SMOOTHNESS",25)
+local RateBox = Input("FIRE RATE",1000)
+local HitboxBox = Input("HITBOX SIZE",10)
+
+FOVBox.FocusLost:Connect(function()
+	local n = tonumber(FOVBox.Text)
+	FOV = n and math.clamp(math.floor(n),50,500) or 150
+	FOVBox.Text = tostring(FOV)
+	UpdateFOV()
+end)
+
+SmoothBox.FocusLost:Connect(function()
+	local n = tonumber(SmoothBox.Text)
+	Smooth = n and math.clamp(math.floor(n),1,100) or 25
+	SmoothBox.Text = tostring(Smooth)
+end)
+
+RateBox.FocusLost:Connect(function()
+	local n = tonumber(RateBox.Text)
+	RapidRate = n and math.clamp(math.floor(n),1,1000) or 1000
+	RateBox.Text = tostring(RapidRate)
+end)
+
+HitboxBox.FocusLost:Connect(function()
+	local n = tonumber(HitboxBox.Text)
+	HitboxSize = n and math.clamp(math.floor(n),1,50) or 10
+	HitboxBox.Text = tostring(HitboxSize)
+end)
+
+local TargetText = Instance.new("TextLabel")
+TargetText.Size = UDim2.new(1,-6,0,20)
+TargetText.BackgroundTransparency = 1
+TargetText.Text = "Target: None"
+TargetText.TextColor3 = Color3.fromRGB(150,150,160)
+TargetText.TextSize = 9
+TargetText.Font = Enum.Font.Gotham
+TargetText.TextXAlignment = Enum.TextXAlignment.Left
+TargetText.Parent = Content
+
+--==================================================
+-- EXCLUDE PLAYERS
+--==================================================
+
+local ExcludeBtn = Button("EXCLUDE PLAYERS")
+
+local ExcludeFrame = Instance.new("Frame")
+ExcludeFrame.Size = UDim2.fromOffset(190,185)
+ExcludeFrame.Position = UDim2.new(0,12,.5,-92)
+ExcludeFrame.BackgroundColor3 = Color3.fromRGB(18,18,23)
+ExcludeFrame.BorderSizePixel = 0
+ExcludeFrame.Visible = false
+ExcludeFrame.Active = true
+ExcludeFrame.ZIndex = 20
+ExcludeFrame.Parent = Gui
+
+Instance.new("UICorner",ExcludeFrame).CornerRadius = UDim.new(0,9)
+
+local ExTitle = Instance.new("TextLabel")
+ExTitle.Size = UDim2.new(1,-40,0,32)
+ExTitle.Position = UDim2.fromOffset(8,0)
+ExTitle.BackgroundTransparency = 1
+ExTitle.Text = "Exclude Players"
+ExTitle.TextColor3 = Color3.new(1,1,1)
+ExTitle.TextSize = 13
+ExTitle.Font = Enum.Font.GothamBold
+ExTitle.TextXAlignment = Enum.TextXAlignment.Left
+ExTitle.Active = true
+ExTitle.ZIndex = 21
+ExTitle.Parent = ExcludeFrame
+
+local ExClose = Instance.new("TextButton")
+ExClose.Size = UDim2.fromOffset(25,24)
+ExClose.Position = UDim2.new(1,-31,0,4)
+ExClose.BackgroundColor3 = Color3.fromRGB(32,32,40)
+ExClose.BorderSizePixel = 0
+ExClose.Text = "×"
+ExClose.TextColor3 = Color3.new(1,1,1)
+ExClose.TextSize = 15
+ExClose.Font = Enum.Font.GothamBold
+ExClose.Active = true
+ExClose.ZIndex = 22
+ExClose.Parent = ExcludeFrame
+
+Instance.new("UICorner",ExClose).CornerRadius = UDim.new(0,5)
+
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.Size = UDim2.new(1,-10,1,-38)
+PlayerList.Position = UDim2.fromOffset(5,35)
+PlayerList.BackgroundTransparency = 1
+PlayerList.BorderSizePixel = 0
+PlayerList.ScrollBarThickness = 2
+PlayerList.CanvasSize = UDim2.new()
+PlayerList.Active = true
+PlayerList.ZIndex = 21
+PlayerList.Parent = ExcludeFrame
+
+local PList = Instance.new("UIListLayout")
+PList.Padding = UDim.new(0,3)
+PList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+PList.Parent = PlayerList
+
+local function RefreshPlayers()
+	for _,v in ipairs(PlayerList:GetChildren()) do
+		if v:IsA("TextButton") then v:Destroy() end
+	end
+
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LP then
+			local b = Instance.new("TextButton")
+			b.Size = UDim2.new(1,-3,0,27)
+			b.BackgroundColor3 = Color3.fromRGB(30,30,38)
+			b.BorderSizePixel = 0
+			b.TextColor3 = Color3.new(1,1,1)
+			b.TextSize = 10
+			b.Font = Enum.Font.Gotham
+			b.Active = true
+			b.AutoButtonColor = false
+			b.ZIndex = 22
+			b.Parent = PlayerList
+			Instance.new("UICorner",b).CornerRadius = UDim.new(0,5)
+
+			local function UpdateButton()
+				if Excluded[p] == true then
+					b.Text = p.DisplayName .. "  [EXCLUDED]"
+					b.BackgroundColor3 = Color3.fromRGB(100,45,45)
+				else
+					b.Text = p.DisplayName
+					b.BackgroundColor3 = Color3.fromRGB(30,30,38)
+				end
+			end
+
+			UpdateButton()
+
+			b.Activated:Connect(function()
+				if Excluded[p] == true then
+					Excluded[p] = nil
+				else
+					Excluded[p] = true
+					if Target == p then Target = nil end
+				end
+				UpdateButton()
+			end)
+		end
+	end
+
+	task.defer(function()
+		PlayerList.CanvasSize = UDim2.fromOffset(0, PList.AbsoluteContentSize.Y + 5)
+	end)
+end
+
+ExcludeBtn.Activated:Connect(function()
+	ExcludeFrame.Visible = true
+	RefreshPlayers()
+end)
+
+ExClose.Activated:Connect(function()
+	ExcludeFrame.Visible = false
+end)
+
+--==================================================
+-- MINIMIZE
+--==================================================
+
+local minimized = false
+Min.Activated:Connect(function()
+	minimized = not minimized
+	Content.Visible = not minimized
+	if minimized then
+		Main.Size = UDim2.fromOffset(205,40)
+		Min.Text = "+"
+	else
+		Main.Size = UDim2.fromOffset(205,530)
+		Min.Text = "—"
+		Canvas()
+	end
+end)
+
+--==================================================
+-- DRAG
+--==================================================
+
+local function Drag(Object,Handle)
+	local dragging = false
+	local start
+	local pos
+
+	Handle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1
+			or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			start = input.Position
+			pos = Object.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					dragging = false
+				end
+			end)
+		end
+	end)
+
+	UIS.InputChanged:Connect(function(input)
+		if not dragging then return end
+		if input.UserInputType ~= Enum.UserInputType.MouseMovement
+			and input.UserInputType ~= Enum.UserInputType.Touch then return end
+
+		local delta = input.Position-start
+		Object.Position = UDim2.new(
+			pos.X.Scale, pos.X.Offset+delta.X,
+			pos.Y.Scale, pos.Y.Offset+delta.Y
+		)
+	end)
+end
+
+Drag(Main,Header)
+Drag(ExcludeFrame,ExTitle)
+
+print("[Alkedion] Part 2 loaded")
+--[[
+  ALKEDION PVP v2 — PART 3/3
+  Logic: Team/Wall, Target, ESP, Visible Hitbox, Godmode/RapidFire/AutoReload/NoRecoil loops, Main loop
+  I-paste pagkatapos ng Part 2. Ito na ang huling part.
+--]]
+
+--==================================================
+-- CHARACTER HELPERS
+--==================================================
+
+local function Alive(char)
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	return hum and hum.Health > 0
+end
+
+local function GetPart(char)
+	if not char then return nil end
+	if TargetPart == "Head" then
+		return char:FindFirstChild("Head") or char:FindFirstChild("HumanoidRootPart")
+	end
+	return char:FindFirstChild("UpperTorso")
+		or char:FindFirstChild("Torso")
+		or char:FindFirstChild("HumanoidRootPart")
+end
+
+--==================================================
+-- TEAM CHECK
+--==================================================
+
+local function SameTeam(p)
+	if not TeamCheck then return false end
+	if not p or p == LP then return false end
+	local myTeam = LP.Team
+	local otherTeam = p.Team
+	if myTeam and otherTeam then
+		return myTeam == otherTeam
+	end
+	return false
+end
+
+--==================================================
+-- WALL CHECK
+--==================================================
+
+local function Visible(char,part)
+	if not Wall then return true end
+	if not Camera then return false end
+
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+
+	local ignore = {}
+	if LP.Character then
+		table.insert(ignore, LP.Character)
+	end
+	params.FilterDescendantsInstances = ignore
+
+	local origin = Camera.CFrame.Position
+	local direction = part.Position-origin
+
+	local result = workspace:Raycast(origin, direction, params)
+
+	return not result or result.Instance:IsDescendantOf(char)
+end
+
+--==================================================
+-- TARGETING
+--==================================================
+
+local function DistanceFromCenter(part)
+	local screen,onScreen = Camera:WorldToViewportPoint(part.Position)
+	if not onScreen or screen.Z <= 0 then return math.huge end
+
+	local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+	return (Vector2.new(screen.X,screen.Y)-center).Magnitude
+end
+
+local function Valid(p)
+	if not p or p == LP then return false end
+	if Excluded[p] == true then return false end
+	if SameTeam(p) then return false end
+	if not p.Character then return false end
+	if not Alive(p.Character) then return false end
+
+	local part = GetPart(p.Character)
+	if not part then return false end
+	if DistanceFromCenter(part) > FOV then return false end
+	if not Visible(p.Character,part) then return false end
+
+	return true
+end
+
+local function Closest()
+	local best = nil
+	local bestDist = FOV
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LP and Excluded[p] ~= true and not SameTeam(p)
+			and p.Character and Alive(p.Character) then
+			local part = GetPart(p.Character)
+			if part then
+				local d = DistanceFromCenter(part)
+				if d <= bestDist and Visible(p.Character,part) then
+					bestDist = d
+					best = p
+				end
+			end
+		end
+	end
+	return best
+end
+
+--==================================================
+-- ESP
+--==================================================
+
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "AlkedionESP"
+ESPFolder.Parent = workspace
+
+local ESPData = {}
+
+local function RemoveESP(p)
+	local d = ESPData[p]
+	if d then
+		if d.Highlight then d.Highlight:Destroy() end
+		if d.NameGui then d.NameGui:Destroy() end
+		ESPData[p] = nil
+	end
+end
+
+local function MakeESP(p)
+	if p == LP then return end
+	if Excluded[p] == true then RemoveESP(p) return end
+	if not p.Character then return end
+	RemoveESP(p)
+
+	local char = p.Character
+	local h = Instance.new("Highlight")
+	h.Adornee = char
+	h.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	h.FillTransparency = .55
+	h.OutlineTransparency = 0
+	h.Enabled = ESP
+	h.Parent = ESPFolder
+
+	local head = char:FindFirstChild("Head")
+	local nameGui = Instance.new("BillboardGui")
+	nameGui.Adornee = head
+	nameGui.Size = UDim2.fromOffset(130,24)
+	nameGui.StudsOffset = Vector3.new(0,3,0)
+	nameGui.AlwaysOnTop = true
+	nameGui.Enabled = ESP
+	nameGui.Parent = ESPFolder
+
+	local text = Instance.new("TextLabel")
+	text.Size = UDim2.fromScale(1,1)
+	text.BackgroundTransparency = 1
+	text.Text = p.DisplayName
+	text.TextColor3 = Color3.new(1,1,1)
+	text.TextStrokeTransparency = .2
+	text.TextSize = 11
+	text.Font = Enum.Font.GothamBold
+	text.Parent = nameGui
+
+	ESPData[p] = { Highlight = h, NameGui = nameGui }
+end
+
+local function UpdateESP()
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LP then
+			if Excluded[p] == true then
+				if ESPData[p] then RemoveESP(p) end
+			elseif ESP then
+				if not ESPData[p] then MakeESP(p) end
+				local d = ESPData[p]
+				if d and p.Character then
+					d.Highlight.Adornee = p.Character
+					d.Highlight.Enabled = true
+					local head = p.Character:FindFirstChild("Head")
+					if head then d.NameGui.Adornee = head end
+					d.NameGui.Enabled = true
+				end
+			elseif ESPData[p] then
+				ESPData[p].Highlight.Enabled = false
+				ESPData[p].NameGui.Enabled = false
+			end
+		end
+	end
+end
+
+--==================================================
+-- HITBOX EXPANDER (VISIBLE)
+--==================================================
+
+local HitboxData = {}
+
+local function RemoveHitbox(p)
+	local d = HitboxData[p]
+	if d then
+		if d.Box then d.Box:Destroy() end
+		HitboxData[p] = nil
+	end
+end
+
+local function MakeHitbox(p)
+	if p == LP then return end
+	if Excluded[p] == true then RemoveHitbox(p) return end
+	if not p.Character then return end
+	RemoveHitbox(p)
+
+	local char = p.Character
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if not hrp then return end
+
+	local box = Instance.new("SelectionBox")
+	box.Name = "AlkedionHB"
+	box.Adornee = hrp
+	box.LineThickness = 0.05
+	box.Color3 = Color3.fromRGB(255, 50, 50)
+	box.SurfaceTransparency = 1
+	box.Transparency = 0
+	box.Parent = HBFrame
+
+	for _,part in ipairs(char:GetChildren()) do
+		if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+			part.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+			part.Transparency = 0.7
+			part.CanCollide = false
+		end
+	end
+
+	HitboxData[p] = {
+		Box = box,
+		Char = char,
+	}
+end
+
+local function UpdateHitbox()
+	if not Hitbox then
+		for p, _ in pairs(HitboxData) do
+			RemoveHitbox(p)
+		end
+		return
+	end
+
+	for _,p in ipairs(Players:GetPlayers()) do
+		if p ~= LP and Excluded[p] ~= true and p.Character then
+			if not HitboxData[p] then
+				MakeHitbox(p)
+			else
+				local d = HitboxData[p]
+				if d.Char == p.Character then
+					for _,part in ipairs(p.Character:GetChildren()) do
+						if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+							part.Size = Vector3.new(HitboxSize, HitboxSize, HitboxSize)
+							part.Transparency = 0.7
+							part.CanCollide = false
+						end
+					end
+					if d.Box and d.Box.Adornee ~= p.Character:FindFirstChild("HumanoidRootPart") then
+						d.Box.Adornee = p.Character:FindFirstChild("HumanoidRootPart")
+					end
+				else
+					RemoveHitbox(p)
+					MakeHitbox(p)
+				end
+			end
+		end
+	end
+
+	for p, d in pairs(HitboxData) do
+		if Excluded[p] == true or not p.Character or p.Character ~= d.Char then
+			RemoveHitbox(p)
+		end
+	end
+end
+
+--==================================================
+-- PLAYER EVENTS
+--==================================================
+
+Players.PlayerAdded:Connect(function(p)
+	p.CharacterAdded:Connect(function()
+		task.wait(.2)
+		if ESP and Excluded[p] ~= true then MakeESP(p) end
+		if Hitbox and Excluded[p] ~= true then MakeHitbox(p) end
+	end)
+	task.wait(.1)
+	if ExcludeFrame.Visible then RefreshPlayers() end
+end)
+
+Players.PlayerRemoving:Connect(function(p)
+	RemoveESP(p)
+	RemoveHitbox(p)
+	Excluded[p] = nil
+	if Target == p then Target = nil end
+	if ExcludeFrame.Visible then RefreshPlayers() end
+end)
+
+for _,p in ipairs(Players:GetPlayers()) do
+	if p ~= LP then
+		p.CharacterAdded:Connect(function()
+			task.wait(.2)
+			if ESP and Excluded[p] ~= true then MakeESP(p) end
+			if Hitbox and Excluded[p] ~= true then MakeHitbox(p) end
+			if Target == p then Target = nil end
+		end)
+	end
+end
+
+--==================================================
+-- APPLY LOOPS
+--==================================================
+
+local function ApplyGodMode()
+	if not GodMode then return end
+	local char = LP.Character
+	if not char then return end
+	local hum = char:FindFirstChildOfClass("Humanoid")
+	if hum then
+		hum.MaxHealth = math.huge
+		hum.Health = math.huge
+	end
+	for _,v in ipairs(char:GetDescendants()) do
+		if v:IsA("BoolValue") and (v.Name:lower():find("god") or v.Name:lower():find("invincible")) then
+			v.Value = true
+		end
+	end
+end
+
+local function ApplyRapidFire()
+	if not RapidFire then return end
+	local char = LP.Character
+	if not char then return end
+
+	local function Apply(tool)
+		tool:SetAttribute("RateOfFire", RapidRate)
+		tool:SetAttribute("rateOfFire", RapidRate)
+		local nv = tool:FindFirstChild("RateOfFire") or tool:FindFirstChild("FireRate")
+		if nv and nv:IsA("NumberValue") then nv.Value = RapidRate end
+	end
+
+	for _,tool in ipairs(char:GetChildren()) do
+		if tool:IsA("Tool") then Apply(tool) end
+	end
+
+	local bp = LP:FindFirstChildOfClass("Backpack")
+	if bp then
+		for _,tool in ipairs(bp:GetChildren()) do
+			if tool:IsA("Tool") then Apply(tool) end
+		end
+	end
+end
+
+local function ApplyAutoReload()
+	if not AutoReload then return end
+	local char = LP.Character
+	if not char then return end
+
+	local function Apply(tool)
+		for _,v in ipairs(tool:GetDescendants()) do
+			if v:IsA("NumberValue") and v.Name:lower():find("ammo") then
+				v.Value = 9999
+			end
+		end
+	end
+
+	for _,tool in ipairs(char:GetChildren()) do
+		if tool:IsA("Tool") then Apply(tool) end
+	end
+
+	local bp = LP:FindFirstChildOfClass("Backpack")
+	if bp then
+		for _,tool in ipairs(bp:GetChildren()) do
+			if tool:IsA("Tool") then Apply(tool) end
+		end
+	end
+end
+
+local function ApplyNoRecoil()
+	if not NoRecoil then return end
+	local char = LP.Character
+	if not char then return end
+
+	local function Apply(tool)
+		for _,v in ipairs(tool:GetDescendants()) do
+			if v:IsA("NumberValue") and (v.Name:lower():find("recoil") or v.Name:lower():find("spread")) then
+				v.Value = 0
+			end
+		end
+	end
+
+	for _,tool in ipairs(char:GetChildren()) do
+		if tool:IsA("Tool") then Apply(tool) end
+	end
+
+	local bp = LP:FindFirstChildOfClass("Backpack")
+	if bp then
+		for _,tool in ipairs(bp:GetChildren()) do
+			if tool:IsA("Tool") then Apply(tool) end
+		end
+	end
+end
+
+--==================================================
+-- MAIN LOOP
+--==================================================
+
+RunService:BindToRenderStep(
+	"ALKEDION_AIM",
+	Enum.RenderPriority.Camera.Value + 10,
+	function()
+		Camera = workspace.CurrentCamera
+		if not Camera then return end
+
+		UpdateFOV()
+		UpdateESP()
+		UpdateHitbox()
+		ApplyGodMode()
+		ApplyRapidFire()
+		ApplyAutoReload()
+		ApplyNoRecoil()
+
+		if not Aim then
+			Target = nil
+			TargetText.Text = "Target: None"
+			return
+		end
+
+		if Lock then
+			if not Valid(Target) then
+				Target = Closest()
+			end
+		else
+			Target = Closest()
+		end
+
+		if Target and Valid(Target) then
+			local part = GetPart(Target.Character)
+			if part then
+				local desired = CFrame.lookAt(Camera.CFrame.Position, part.Position)
+				local alpha = math.clamp(Smooth/100, .01, 1)
+				Camera.CFrame = Camera.CFrame:Lerp(desired, alpha)
+				TargetText.Text = "Target: " .. Target.DisplayName
+			end
+		else
+			Target = nil
+			TargetText.Text = "Target: None"
+		end
+	end
+)
+
+--==================================================
+-- Q KEY
+--==================================================
+
+UIS.InputBegan:Connect(function(input,processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.Q then
+		Aim = not Aim
+		SetButton(AimBtn,Aim,"AIMBOT")
+		if not Aim then Target = nil end
+		UpdateFOV()
+	end
+end)
+
+--==================================================
+-- START
+--==================================================
+
+Canvas()
+UpdateFOV()
+RefreshPlayers()
+
+print("ALKEDION PVP EXTENDED v2 LOADED")
