@@ -1,0 +1,373 @@
+--[[
+  JUT HUB OPTIMIZER SCRIPT
+  May Welcome splash screen na may pumpkin icon (🎃)
+  Tapos lalabas yung main optimizer GUI.
+  
+  Flow:
+    1. Welcome splash (3 seconds) — "Welcome to Jut Hub" + 🎃
+    2. Fade out
+    3. Main optimizer GUI
+]]
+
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local TweenService = game:GetService("TweenService")
+
+local LP = Players.LocalPlayer
+local PG = LP:WaitForChild("PlayerGui")
+
+local old = PG:FindFirstChild("JutHubOptimizer"); if old then old:Destroy() end
+local oldSplash = PG:FindFirstChild("JutHubSplash"); if oldSplash then oldSplash:Destroy() end
+
+local OptimizerOn = false
+local OriginalSettings = {}
+local RemovedInstances = {}
+
+--==================================================
+-- WELCOME SPLASH SCREEN
+--==================================================
+
+local Splash = Instance.new("ScreenGui")
+Splash.Name = "JutHubSplash"
+Splash.ResetOnSpawn = false
+Splash.IgnoreGuiInset = true
+Splash.DisplayOrder = 999
+Splash.Parent = PG
+
+local SplashFrame = Instance.new("Frame")
+SplashFrame.Size = UDim2.fromScale(1,1)
+SplashFrame.BackgroundColor3 = Color3.fromRGB(10,10,15)
+SplashFrame.BorderSizePixel = 0
+SplashFrame.Parent = Splash
+
+-- Pumpkin icon (emoji)
+local Pumpkin = Instance.new("TextLabel")
+Pumpkin.Size = UDim2.fromOffset(100,100)
+Pumpkin.Position = UDim2.new(0.5, -50, 0.5, -100)
+Pumpkin.BackgroundTransparency = 1
+Pumpkin.Text = "🎃"
+Pumpkin.TextSize = 80
+Pumpkin.Font = Enum.Font.GothamBold
+Pumpkin.TextColor3 = Color3.fromRGB(255,150,50)
+Pumpkin.Parent = SplashFrame
+
+-- Welcome text
+local WelcomeText = Instance.new("TextLabel")
+WelcomeText.Size = UDim2.new(1,0,0,50)
+WelcomeText.Position = UDim2.new(0,0,0.5,10)
+WelcomeText.BackgroundTransparency = 1
+WelcomeText.Text = "Welcome to Jut Hub"
+WelcomeText.TextColor3 = Color3.fromRGB(255,255,255)
+WelcomeText.TextSize = 24
+WelcomeText.Font = Enum.Font.GothamBold
+WelcomeText.TextXAlignment = Enum.TextXAlignment.Center
+WelcomeText.Parent = SplashFrame
+
+-- Subtitle
+local SubText = Instance.new("TextLabel")
+SubText.Size = UDim2.new(1,0,0,30)
+SubText.Position = UDim2.new(0,0,0.5,55)
+SubText.BackgroundTransparency = 1
+SubText.Text = "Optimizer Script"
+SubText.TextColor3 = Color3.fromRGB(180,180,190)
+SubText.TextSize = 14
+SubText.Font = Enum.Font.Gotham
+SubText.TextXAlignment = Enum.TextXAlignment.Center
+SubText.Parent = SplashFrame
+
+-- Loading bar
+local LoadingBar = Instance.new("Frame")
+LoadingBar.Size = UDim2.fromOffset(200,4)
+LoadingBar.Position = UDim2.new(0.5, -100, 0.5, 110)
+LoadingBar.BackgroundColor3 = Color3.fromRGB(40,40,50)
+LoadingBar.BorderSizePixel = 0
+LoadingBar.Parent = SplashFrame
+Instance.new("UICorner", LoadingBar).CornerRadius = UDim.new(1,0)
+
+local LoadingFill = Instance.new("Frame")
+LoadingFill.Size = UDim2.fromScale(0,1)
+LoadingFill.BackgroundColor3 = Color3.fromRGB(255,150,50)
+LoadingFill.BorderSizePixel = 0
+LoadingFill.Parent = LoadingBar
+Instance.new("UICorner", LoadingFill).CornerRadius = UDim.new(1,0)
+
+-- Animate loading bar
+TweenService:Create(LoadingFill, TweenInfo.new(2.5, Enum.EasingStyle.Linear), {
+    Size = UDim2.fromScale(1,1)
+}):Play()
+
+-- Pumpkin bounce animation
+task.spawn(function()
+    local bounce = true
+    while Splash.Parent and bounce do
+        TweenService:Create(Pumpkin, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            Position = UDim2.new(0.5, -50, 0.5, -110)
+        }):Play()
+        task.wait(0.5)
+        TweenService:Create(Pumpkin, TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {
+            Position = UDim2.new(0.5, -50, 0.5, -100)
+        }):Play()
+        task.wait(0.5)
+    end
+end)
+
+-- Fade out splash after 3 seconds
+task.spawn(function()
+    task.wait(3)
+    TweenService:Create(SplashFrame, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {
+        BackgroundTransparency = 1
+    }):Play()
+    TweenService:Create(Pumpkin, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {
+        TextTransparency = 1
+    }):Play()
+    TweenService:Create(WelcomeText, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {
+        TextTransparency = 1
+    }):Play()
+    TweenService:Create(SubText, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {
+        TextTransparency = 1
+    }):Play()
+    TweenService:Create(LoadingBar, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {
+        BackgroundTransparency = 1
+    }):Play()
+    TweenService:Create(LoadingFill, TweenInfo.new(0.5, Enum.EasingStyle.Linear), {
+        BackgroundTransparency = 1
+    }):Play()
+    task.wait(0.6)
+    Splash:Destroy()
+    -- Show main GUI
+    if Main then Main.Visible = true end
+end)
+
+--==================================================
+-- MAIN GUI (hidden initially)
+--==================================================
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "JutHubOptimizer"
+Gui.ResetOnSpawn = false
+Gui.IgnoreGuiInset = true
+Gui.Parent = PG
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(220, 180)
+Main.Position = UDim2.new(0, 12, 0.5, -90)
+Main.BackgroundColor3 = Color3.fromRGB(15,15,20)
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Visible = false
+Main.Parent = Gui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0,10)
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(70,70,85)
+Stroke.Thickness = 1.5
+Stroke.Parent = Main
+
+-- Header
+local Header = Instance.new("Frame")
+Header.Size = UDim2.new(1,0,0,34)
+Header.BackgroundColor3 = Color3.fromRGB(20,20,27)
+Header.BorderSizePixel = 0
+Header.Active = true
+Header.Parent = Main
+Instance.new("UICorner", Header).CornerRadius = UDim.new(0,10)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,-40,1,0)
+Title.Position = UDim2.fromOffset(10,0)
+Title.BackgroundTransparency = 1
+Title.Text = "🎃 Jut Hub Optimizer"
+Title.TextColor3 = Color3.fromRGB(200,200,255)
+Title.TextSize = 13
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = Header
+
+local Min = Instance.new("TextButton")
+Min.Size = UDim2.fromOffset(22,22)
+Min.Position = UDim2.new(1,-28,0,6)
+Min.BackgroundColor3 = Color3.fromRGB(35,35,45)
+Min.Text = "—"
+Min.TextColor3 = Color3.fromRGB(200,200,255)
+Min.TextSize = 13
+Min.Font = Enum.Font.GothamBold
+Min.Parent = Header
+Instance.new("UICorner", Min).CornerRadius = UDim.new(0,5)
+
+-- Welcome text (inside main GUI)
+local Welcome = Instance.new("TextLabel")
+Welcome.Size = UDim2.new(1,-20,0,40)
+Welcome.Position = UDim2.fromOffset(10,40)
+Welcome.BackgroundTransparency = 1
+Welcome.Text = "Welcome to Jut Hub\nOptimizer Script"
+Welcome.TextColor3 = Color3.fromRGB(220,220,230)
+Welcome.TextSize = 12
+Welcome.Font = Enum.Font.GothamBold
+Welcome.TextXAlignment = Enum.TextXAlignment.Center
+Welcome.TextYAlignment = Enum.TextYAlignment.Center
+Welcome.Parent = Main
+
+-- Optimize button
+local Btn = Instance.new("TextButton")
+Btn.Size = UDim2.new(1,-20,0,32)
+Btn.Position = UDim2.fromOffset(10,86)
+Btn.BackgroundColor3 = Color3.fromRGB(30,30,40)
+Btn.BorderSizePixel = 0
+Btn.Text = "OPTIMIZE  [OFF]"
+Btn.TextColor3 = Color3.fromRGB(220,220,230)
+Btn.TextSize = 11
+Btn.Font = Enum.Font.GothamBold
+Btn.Parent = Main
+Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,6)
+
+-- Info (FPS/Ping)
+local Info = Instance.new("TextLabel")
+Info.Size = UDim2.new(1,-20,0,40)
+Info.Position = UDim2.fromOffset(10,124)
+Info.BackgroundTransparency = 1
+Info.Text = "FPS: ? | Ping: ?"
+Info.TextColor3 = Color3.fromRGB(150,150,160)
+Info.TextSize = 10
+Info.Font = Enum.Font.Gotham
+Info.TextXAlignment = Enum.TextXAlignment.Center
+Info.TextYAlignment = Enum.TextYAlignment.Center
+Info.Parent = Main
+
+-- Drag
+local drag, si, sp
+Header.InputBegan:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+        drag = true si = i.Position sp = Main.Position
+    end
+end)
+UIS.InputChanged:Connect(function(i)
+    if drag and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
+        local d = i.Position - si
+        Main.Position = UDim2.new(sp.X.Scale, sp.X.Offset + d.X, sp.Y.Scale, sp.Y.Offset + d.Y)
+    end
+end)
+UIS.InputEnded:Connect(function(i)
+    if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then drag = false end
+end)
+
+-- Minimize
+local minimized = false
+Min.Activated:Connect(function()
+    minimized = not minimized
+    Welcome.Visible = not minimized
+    Btn.Visible = not minimized
+    Info.Visible = not minimized
+    if minimized then
+        Main.Size = UDim2.fromOffset(220,34)
+        Min.Text = "+"
+    else
+        Main.Size = UDim2.fromOffset(220,180)
+        Min.Text = "—"
+    end
+end)
+
+--==================================================
+-- OPTIMIZER
+--==================================================
+
+local function SaveOriginal()
+    OriginalSettings = {
+        GlobalShadows = Lighting.GlobalShadows,
+        Brightness = Lighting.Brightness,
+        EnvironmentDiffuseScale = Lighting.EnvironmentDiffuseScale,
+        EnvironmentSpecularScale = Lighting.EnvironmentSpecularScale,
+        FogEnd = Lighting.FogEnd,
+        FogStart = Lighting.FogStart,
+    }
+    pcall(function()
+        OriginalSettings.QualityLevel = settings().Rendering.QualityLevel
+        OriginalSettings.MeshPartDetailLevel = settings().Rendering.MeshPartDetailLevel
+    end)
+end
+
+local function ApplyOptimizer()
+    pcall(function()
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+    end)
+    pcall(function()
+        settings().Rendering.MeshPartDetailLevel = Enum.MeshPartDetailLevel.Level01
+    end)
+    pcall(function()
+        Lighting.GlobalShadows = false
+        Lighting.Brightness = 1
+        Lighting.EnvironmentDiffuseScale = 0
+        Lighting.EnvironmentSpecularScale = 0
+        Lighting.FogEnd = 1000
+        Lighting.FogStart = 0
+    end)
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("ParticleEmitter") or obj:IsA("Smoke") or obj:IsA("Fire")
+            or obj:IsA("Sparkles") then
+            pcall(function() obj.Enabled = false end)
+            RemovedInstances[#RemovedInstances+1] = obj
+        end
+    end
+    print("[Jut Hub] Optimizer applied")
+end
+
+local function RestoreOptimizer()
+    if OriginalSettings.GlobalShadows ~= nil then
+        pcall(function()
+            Lighting.GlobalShadows = OriginalSettings.GlobalShadows
+            Lighting.Brightness = OriginalSettings.Brightness
+            Lighting.EnvironmentDiffuseScale = OriginalSettings.EnvironmentDiffuseScale
+            Lighting.EnvironmentSpecularScale = OriginalSettings.EnvironmentSpecularScale
+            Lighting.FogEnd = OriginalSettings.FogEnd
+            Lighting.FogStart = OriginalSettings.FogStart
+        end)
+        pcall(function()
+            settings().Rendering.QualityLevel = OriginalSettings.QualityLevel
+            settings().Rendering.MeshPartDetailLevel = OriginalSettings.MeshPartDetailLevel
+        end)
+    end
+    for _, obj in ipairs(RemovedInstances) do
+        pcall(function()
+            if obj and obj.Parent then obj.Enabled = true end
+        end)
+    end
+    RemovedInstances = {}
+    print("[Jut Hub] Optimizer restored")
+end
+
+Btn.Activated:Connect(function()
+    OptimizerOn = not OptimizerOn
+    Btn.Text = "OPTIMIZE  [" .. (OptimizerOn and "ON" or "OFF") .. "]"
+    Btn.BackgroundColor3 = OptimizerOn and Color3.fromRGB(40,120,70) or Color3.fromRGB(30,30,40)
+    if OptimizerOn then
+        SaveOriginal()
+        ApplyOptimizer()
+    else
+        RestoreOptimizer()
+    end
+end)
+
+--==================================================
+-- FPS / PING DISPLAY
+--==================================================
+
+local frames, lastTime = 0, tick()
+RunService.RenderStepped:Connect(function()
+    frames = frames + 1
+    if tick() - lastTime >= 1 then
+        local fps = frames
+        frames = 0
+        lastTime = tick()
+        local ping = "?"
+        pcall(function()
+            ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        end)
+        Info.Text = "FPS: " .. fps .. "  |  Ping: " .. ping
+    end
+end)
+
+print("JUT HUB OPTIMIZER SCRIPT LOADED")
+print("Welcome to Jut Hub Optimizer Script")
+print("Splash screen: 3 seconds, may pumpkin icon")
