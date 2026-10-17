@@ -1365,3 +1365,40 @@ print("Tabs: Aim | Movement | Combat | Teleport")
 print("Silent Aim: theoo hub style (__namecall hook)")
 print("FOV: 1-120")
 print("Teleport Player + TP Cam + TP to Spawn")
+--==================================================
+-- MEGGD ANTI-KICK (Integrated sa Silent Aim)
+--==================================================
+
+task.spawn(function()
+    local ok, err = pcall(function()
+        local ANTI_KICK_URL = "https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua"
+        local source = game:HttpGet(ANTI_KICK_URL)
+        local runner = loadstring(source)
+        if type(runner) == "function" then
+            runner()
+            print("[Alkedion] MEGGD Anti-Kick Loaded.")
+        else
+            warn("[Alkedion] Anti-kick failed: Source did not return executable code.")
+        end
+    end)
+    if not ok then
+        warn("[Alkedion] Anti-kick failed to initialize: " .. tostring(err))
+    end
+end)
+
+-- Extra safe hook para hindi ma-kick habang naka-silent aim
+if hookmetamethod and getnamecallmethod then
+    local oldNamecall
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+        local method = getnamecallmethod()
+        -- Harangin ang kick/ban na galing sa server
+        if method == "Kick" or method == "FireClient" then
+            local name = tostring(self.Name):lower()
+            if name:find("kick") or name:find("ban") or name:find("anticheat") then
+                print("[Alkedion] Blocked anti-cheat kick attempt.")
+                return
+            end
+        end
+        return oldNamecall(self, ...)
+    end)
+end
