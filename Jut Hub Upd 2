@@ -1,10 +1,3 @@
-## bat wala yung splash
-
-Source: <https://chat.deepseek.com/share/yiync4eno9tk2ussua>
-
-### Assistant · 18 Oct 2026, 13:56
-
-```lua
 -- [1] MAIN CORE & ANTI-KICK
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
