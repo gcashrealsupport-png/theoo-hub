@@ -1,12 +1,3 @@
-Source: <https://chat.deepseek.com/share/ai3dg00tspxovhj6yj>
-
-### Assistant · 18 Oct 2026, 13:44
-
-TeaHack: "Sige, ako na ang bahala. Heto na yung isang buong script — pinagsama-sama ko na lahat ng fixes natin: mobile TP Cam na may toggle, tamang joystick direction, at yung maayos na Teleport to Player."
-
-Title: Jut Hub — Final Master Build (All Fixes Applied)
-
-```lua
 --[[
   JUT HUB — FINAL MASTER BUILD
   - Welcome Splash
@@ -942,6 +933,3 @@ UIS.JumpRequest:Connect(function()
 end)
 
 print("[Jut Hub] Loaded — Master Build Complete.")
-```
-
-TeaHack: "Ayan, master build na. Isang paste, kumpleto na lahat ng request mo — TP Cam toggle, tamang joystick, at maayos na teleport list."
