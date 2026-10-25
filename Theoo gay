@@ -1,14 +1,3 @@
-## eto image ng loob ng gui at floating icon pati welcome to theoo hub pepe
-
-Source: <https://chat.deepseek.com/share/3eo28ntcd9lp30sy9s>
-
-### Assistant · 25 Oct 2026, 12:49
-
-TeaHack: Ah, gets. Gusto mo pala lagyan ng custom image/design 'yung loob ng hub at 'yung floating icon, tapos may welcome splash screen. I-a-update ko 'yung script para mag-load ng external images (Rihanna-inspired aesthetic) para sa icon, background, at splash screen.
-
-**Title: Theoo Hub — Custom Image UI + Welcome Splash**
-
-```lua
 --[[
   THEOO HUB — Custom Image UI + Welcome Splash
   Tabs: Main (Aim), Misc (Lagger)
@@ -366,8 +355,3 @@ RunService.RenderStepped:Connect(function()
 end)
 
 print("[Theoo Hub] Loaded with Custom Image UI.")
-```
-
-Pinalitan ko na 'yung icon at background frame ng `ImageLabel` at `ImageButton`. Nilagyan ko rin ng splash screen na may text na "Welcome to Theoo Hub Pepe".
-
-**Note:** Nilagyan ko ng placeholder image ID (`13483403087`) 'yung script. Palitan mo na lang 'yung nasa `IMAGES` table sa taas kung may specific Rihanna image ID ka na gusto mong gamitin para sakto talaga.
