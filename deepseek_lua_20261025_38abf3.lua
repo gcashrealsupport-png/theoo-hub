@@ -1,0 +1,484 @@
+--[[
+  THEOO HUB — Complete Working Script
+  Main: Silent Aim, Team/Wall Check, FOV Size
+  Misc: Noclip, Fly, Godmode (Safe), Invisible (Ghost), WalkSpeed, Server Lagger
+]]
+
+if not game:IsLoaded() then game.Loaded:Wait() end
+
+-- 0. ANTI-KICK
+task.spawn(function()
+    pcall(function()
+        local url = "https://raw.githubusercontent.com/SUUUUUS00000/MEGGD-Anti-kick/refs/heads/main/MEGGD%20Best%20Anti-kick.lua"
+        local runner = loadstring(game:HttpGet(url))
+        if type(runner) == "function" then runner(); print("[Anti-Kick] Loaded.") end
+    end)
+end)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+-- 1. CONFIG
+local Config = {
+    SilentAim = false, TeamCheck = true, WallCheck = false, FovSize = 200,
+    WalkSpeed = 16, Noclip = false, Fly = false, Invisible = false, Godmode = false,
+}
+
+local SA = { targetPart = nil, namecallOld = nil, hookActive = false }
+local FlyConnection, FlyBodyVel = nil, nil
+local GhostConnection = nil
+local GodmodeConnection = nil
+
+-- 2. CORE LOGIC
+local function IsSameTeam(plr)
+    if not Config.TeamCheck then return false end
+    if not plr or plr == LocalPlayer then return true end
+    if LocalPlayer.Team and plr.Team then return LocalPlayer.Team == plr.Team end
+    return false
+end
+
+local function IsVisible(part)
+    if not Config.WallCheck then return true end
+    local origin = Camera.CFrame.Position
+    local dir = (part.Position - origin)
+    local params = RaycastParams.new()
+    params.FilterType = Enum.RaycastFilterType.Exclude
+    params.FilterDescendantsInstances = {LocalPlayer.Character, Camera}
+    local res = Workspace:Raycast(origin, dir, params)
+    return res == nil or res.Instance:IsDescendantOf(part.Parent)
+end
+
+local function FindTarget()
+    local cam = Workspace.CurrentCamera
+    if not cam then return nil end
+    local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+    local bestPart, bestScore = nil, math.huge
+    
+    for _, t in ipairs(Players:GetPlayers()) do
+        if t ~= LocalPlayer and not IsSameTeam(t) and t.Character then
+            local hum = t.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                local part = t.Character:FindFirstChild("Head") or t.Character:FindFirstChild("HumanoidRootPart")
+                if part and IsVisible(part) then
+                    local scr, on = cam:WorldToViewportPoint(part.Position)
+                    if on and scr.Z > 0 then
+                        local dSq = (scr.X-center.X)^2 + (scr.Y-center.Y)^2
+                        if dSq <= Config.FovSize^2 and dSq < bestScore then
+                            bestScore = dSq; bestPart = part
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return bestPart
+end
+
+local function SA_Install()
+    if SA.hookActive then return end
+    SA.namecallOld = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if Config.SilentAim and not checkcaller() then
+            if method == "FireServer" or method == "Raycast" or method == "InvokeServer" then
+                local hp = SA.targetPart
+                if hp and hp.Parent then
+                    local args = {...}
+                    if method == "Raycast" then
+                        local o, d = args[1], args[2]
+                        if typeof(o) == "Vector3" and typeof(d) == "Vector3" then
+                            local delta = hp.Position - o
+                            if delta.Magnitude > 0 then args[2] = delta.Unit * d.Magnitude end
+                            return SA.namecallOld(self, unpack(args))
+                        end
+                    else
+                        local lower = string.lower(self.Name)
+                        for _, w in ipairs({"hit", "bullet", "shoot", "fire", "attack"}) do 
+                            if lower:find(w) then
+                                local newArgs = table.clone(args)
+                                for i, v in ipairs(newArgs) do
+                                    if typeof(v) == "Vector3" then
+                                        local delta = hp.Position - v
+                                        if delta.Magnitude > 0 then newArgs[i] = delta.Unit * math.max(delta.Magnitude, 1) end
+                                    elseif typeof(v) == "CFrame" then 
+                                        newArgs[i] = CFrame.lookAt(v.Position, hp.Position) 
+                                    end
+                                end
+                                return SA.namecallOld(self, unpack(newArgs))
+                            end 
+                        end
+                    end
+                end
+            end
+        end
+        return SA.namecallOld(self, ...)
+    end))
+    SA.hookActive = true
+end
+
+local function SA_Restore()
+    if SA.namecallOld then hookmetamethod(game, "__namecall", SA.namecallOld) end
+    SA.hookActive = false
+end
+
+-- 3. MISC LOGIC
+local function ApplyWalkSpeed()
+    local char = LocalPlayer.Character
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if hum then hum.WalkSpeed = Config.WalkSpeed end
+end
+
+local function ToggleNoclip(state)
+    local char = LocalPlayer.Character
+    if not char then return end
+    for _, part in ipairs(char:GetDescendants()) do
+        if part:IsA("BasePart") then part.CanCollide = not state end
+    end
+end
+
+local function StartFly(state)
+    if not state then
+        if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
+        if FlyBodyVel then FlyBodyVel:Destroy() FlyBodyVel = nil end
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then hum.PlatformStand = false end
+        return
+    end
+
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum then return end
+
+    hum.PlatformStand = true
+    FlyBodyVel = Instance.new("BodyVelocity")
+    FlyBodyVel.Velocity = Vector3.zero
+    FlyBodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    FlyBodyVel.Parent = hrp
+
+    FlyConnection = RunService.RenderStepped:Connect(function()
+        if not Config.Fly then return end
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if not hrp or not hum then return end
+        local moveDir = hum.MoveDirection
+        FlyBodyVel.Velocity = (moveDir * Config.WalkSpeed * 4) + Vector3.new(0, 2, 0)
+    end)
+end
+
+-- FIXED GODMODE (No Spin, Just Health Lock)
+local function StartGodmode(state)
+    if not state then
+        if GodmodeConnection then GodmodeConnection:Disconnect() GodmodeConnection = nil end
+        return
+    end
+
+    GodmodeConnection = RunService.Heartbeat:Connect(function()
+        if not Config.Godmode then return end
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            hum.Health = hum.MaxHealth -- I-lock lang ang health, walang spin
+        end
+    end)
+end
+
+-- GHOST MODE (Safe Invisible)
+local function StartGhost(state)
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    
+    if not state then
+        if GhostConnection then GhostConnection:Disconnect() GhostConnection = nil end
+        if char then
+            for _, desc in ipairs(char:GetDescendants()) do
+                if desc:IsA("BasePart") then
+                    desc.Transparency = (desc.Name == "HumanoidRootPart" and 1 or 0)
+                    desc.CanCollide = true
+                elseif desc:IsA("BillboardGui") then
+                    desc.Enabled = true
+                end
+            end
+        end
+        if hrp then hrp.Anchored = false end
+        return
+    end
+
+    if not char or not hrp then return end
+
+    GhostConnection = RunService.Heartbeat:Connect(function()
+        if not Config.Invisible then return end
+        local currentChar = LocalPlayer.Character
+        local currentHrp = currentChar and currentChar:FindFirstChild("HumanoidRootPart")
+        if currentHrp then
+            currentHrp.Anchored = true
+            for _, desc in ipairs(currentChar:GetDescendants()) do
+                if desc:IsA("BasePart") then
+                    desc.Transparency = 1
+                    desc.CanCollide = false
+                elseif desc:IsA("BillboardGui") then
+                    desc.Enabled = false
+                end
+            end
+        end
+    end)
+end
+
+-- 4. UI CREATION
+local oldHub = CoreGui:FindFirstChild("TheooHub")
+if oldHub then oldHub:Destroy() end
+
+local Gui = Instance.new("ScreenGui")
+Gui.Name = "TheooHub"
+Gui.ResetOnSpawn = false
+Gui.DisplayOrder = 10
+Gui.IgnoreGuiInset = true
+Gui.Parent = CoreGui
+
+local Icon = Instance.new("TextButton")
+Icon.Size = UDim2.new(0, 50, 0, 50)
+Icon.Position = UDim2.new(0, 20, 0.5, -25)
+Icon.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+Icon.Text = "T"
+Icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+Icon.Font = Enum.Font.GothamBold
+Icon.TextSize = 24
+Icon.Parent = Gui
+Instance.new("UICorner", Icon).CornerRadius = UDim.new(1, 0)
+local stroke = Instance.new("UIStroke", Icon)
+stroke.Color = Color3.fromRGB(100, 120, 255)
+stroke.Thickness = 2
+
+local Main = Instance.new("Frame")
+Main.Size = UDim2.fromOffset(260, 360)
+Main.Position = UDim2.new(0.5, -130, 0.5, -180)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+Main.Active = true
+Main.Draggable = true
+Main.Visible = false
+Main.Parent = Gui
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, 0, 0, 35)
+Title.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+Title.Text = "Theoo Hub"
+Title.TextColor3 = Color3.fromRGB(200, 200, 255)
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 14
+Title.Parent = Main
+Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 10)
+
+local TabFrame = Instance.new("Frame")
+TabFrame.Size = UDim2.new(1, -20, 0, 30)
+TabFrame.Position = UDim2.new(0, 10, 0, 40)
+TabFrame.BackgroundTransparency = 1
+TabFrame.Parent = Main
+
+local TabList = Instance.new("UIListLayout")
+TabList.FillDirection = Enum.FillDirection.Horizontal
+TabList.Padding = UDim.new(0, 5)
+TabList.Parent = TabFrame
+
+local MainTabContent = Instance.new("Frame")
+MainTabContent.Size = UDim2.new(1, -20, 1, -80)
+MainTabContent.Position = UDim2.new(0, 10, 0, 75)
+MainTabContent.BackgroundTransparency = 1
+MainTabContent.Parent = Main
+
+local MiscTabContent = Instance.new("Frame")
+MiscTabContent.Size = UDim2.new(1, -20, 1, -80)
+MiscTabContent.Position = UDim2.new(0, 10, 0, 75)
+MiscTabContent.BackgroundTransparency = 1
+MiscTabContent.Visible = false
+MiscTabContent.Parent = Main
+
+local function MakeTab(text, contentFrame)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 80, 1, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(200, 200, 200)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.Parent = TabFrame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.Activated:Connect(function()
+        MainTabContent.Visible = false
+        MiscTabContent.Visible = false
+        contentFrame.Visible = true
+        for _, child in ipairs(TabFrame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+                child.TextColor3 = Color3.fromRGB(200, 200, 200)
+            end
+        end
+        btn.BackgroundColor3 = Color3.fromRGB(50, 120, 70)
+        btn.TextColor3 = Color3.new(1, 1, 1)
+    end)
+    return btn
+end
+
+MakeTab("Main", MainTabContent)
+MakeTab("Misc", MiscTabContent)
+
+local function MakeToggle(parent, key, text, default, orderY, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 0, 32)
+    btn.Position = UDim2.new(0, 0, 0, orderY)
+    btn.BackgroundColor3 = default and Color3.fromRGB(50, 120, 70) or Color3.fromRGB(60, 60, 70)
+    btn.Text = text .. " [" .. (default and "ON" or "OFF") .. "]"
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    btn.Parent = parent
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+
+    btn.Activated:Connect(function()
+        Config[key] = not Config[key]
+        local state = Config[key]
+        btn.Text = text .. " [" .. (state and "ON" or "OFF") .. "]"
+        btn.BackgroundColor3 = state and Color3.fromRGB(50, 120, 70) or Color3.fromRGB(60, 60, 70)
+        if callback then callback(state) end
+    end)
+    return btn
+end
+
+MakeToggle(MainTabContent, "SilentAim", "Silent Aim", Config.SilentAim, 0, function(state)
+    if state then SA_Install() else SA_Restore() end
+end)
+MakeToggle(MainTabContent, "TeamCheck", "Team Check", Config.TeamCheck, 40)
+MakeToggle(MainTabContent, "WallCheck", "Wall Check", Config.WallCheck, 80)
+
+-- FOV Slider
+local FovLabel = Instance.new("TextLabel")
+FovLabel.Size = UDim2.new(1, 0, 0, 20)
+FovLabel.Position = UDim2.new(0, 0, 0, 120)
+FovLabel.BackgroundTransparency = 1
+FovLabel.Text = "FOV Size: " .. Config.FovSize
+FovLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+FovLabel.Font = Enum.Font.Gotham
+FovLabel.TextSize = 12
+FovLabel.Parent = MainTabContent
+
+local FovSlider = Instance.new("TextButton")
+FovSlider.Size = UDim2.new(1, 0, 0, 8)
+FovSlider.Position = UDim2.new(0, 0, 0, 145)
+FovSlider.BackgroundColor3 = Color3.fromRGB(50, 55, 65)
+FovSlider.Parent = MainTabContent
+Instance.new("UICorner", FovSlider).CornerRadius = UDim.new(1, 0)
+
+local FovFill = Instance.new("Frame")
+FovFill.Size = UDim2.new(Config.FovSize / 500, 0, 1, 0)
+FovFill.BackgroundColor3 = Color3.fromRGB(90, 120, 220)
+FovFill.Parent = FovSlider
+Instance.new("UICorner", FovFill).CornerRadius = UDim.new(1, 0)
+
+local draggingFov = false
+FovSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingFov = true end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingFov = false end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if draggingFov and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local pos = input.Position.X - FovSlider.AbsolutePosition.X
+        local frac = math.clamp(pos / FovSlider.AbsoluteSize.X, 0, 1)
+        FovFill.Size = UDim2.new(frac, 0, 1, 0)
+        Config.FovSize = math.floor(frac * 500)
+        FovLabel.Text = "FOV Size: " .. Config.FovSize
+    end
+end)
+
+-- Misc Tab
+MakeToggle(MiscTabContent, "Noclip", "Noclip", Config.Noclip, 0, ToggleNoclip)
+MakeToggle(MiscTabContent, "Fly", "Fly", Config.Fly, 40, StartFly)
+MakeToggle(MiscTabContent, "Invisible", "Invisible (Ghost)", Config.Invisible, 80, StartGhost)
+MakeToggle(MiscTabContent, "Godmode", "Godmode", Config.Godmode, 120, StartGodmode)
+
+-- WalkSpeed Slider
+local WsLabel = Instance.new("TextLabel")
+WsLabel.Size = UDim2.new(1, 0, 0, 20)
+WsLabel.Position = UDim2.new(0, 0, 0, 160)
+WsLabel.BackgroundTransparency = 1
+WsLabel.Text = "WalkSpeed: " .. Config.WalkSpeed
+WsLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+WsLabel.Font = Enum.Font.Gotham
+WsLabel.TextSize = 12
+WsLabel.Parent = MiscTabContent
+
+local WsSlider = Instance.new("TextButton")
+WsSlider.Size = UDim2.new(1, 0, 0, 8)
+WsSlider.Position = UDim2.new(0, 0, 0, 185)
+WsSlider.BackgroundColor3 = Color3.fromRGB(50, 55, 65)
+WsSlider.Parent = MiscTabContent
+Instance.new("UICorner", WsSlider).CornerRadius = UDim.new(1, 0)
+
+local WsFill = Instance.new("Frame")
+WsFill.Size = UDim2.new((Config.WalkSpeed - 16) / 184, 0, 1, 0)
+WsFill.BackgroundColor3 = Color3.fromRGB(90, 120, 220)
+WsFill.Parent = WsSlider
+Instance.new("UICorner", WsFill).CornerRadius = UDim.new(1, 0)
+
+local draggingWs = false
+WsSlider.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingWs = true end
+end)
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then draggingWs = false end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if draggingWs and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local pos = input.Position.X - WsSlider.AbsolutePosition.X
+        local frac = math.clamp(pos / WsSlider.AbsoluteSize.X, 0, 1)
+        WsFill.Size = UDim2.new(frac, 0, 1, 0)
+        Config.WalkSpeed = 16 + math.floor(frac * 184)
+        WsLabel.Text = "WalkSpeed: " .. Config.WalkSpeed
+        ApplyWalkSpeed()
+    end
+end)
+
+-- Lagger Button
+local LaggerBtn = Instance.new("TextButton")
+LaggerBtn.Size = UDim2.new(1, 0, 0, 32)
+LaggerBtn.Position = UDim2.new(0, 0, 0, 200)
+LaggerBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+LaggerBtn.Text = "Server Lagger"
+LaggerBtn.TextColor3 = Color3.new(1, 1, 1)
+LaggerBtn.Font = Enum.Font.GothamBold
+LaggerBtn.TextSize = 12
+LaggerBtn.Parent = MiscTabContent
+Instance.new("UICorner", LaggerBtn).CornerRadius = UDim.new(0, 6)
+
+LaggerBtn.Activated:Connect(function()
+    local remote = game:FindFirstChild("RobloxReplicatedStorage") and game:FindFirstChild("RobloxReplicatedStorage"):FindFirstChild("SetPlayerBlockList")
+    if remote then
+        local entries = 799999
+        local payload = table.create(entries)
+        for i = 1, entries do payload[i] = { id = i, v = i * 2 } end
+        remote:FireServer(payload)
+        print("[Theoo Hub] Server Lagger Executed.")
+    else
+        warn("[Theoo Hub] SetPlayerBlockList remote not found.")
+    end
+end)
+
+-- 5. GLOBAL LOOP
+Icon.Activated:Connect(function() Main.Visible = not Main.Visible end)
+UserInputService.InputBegan:Connect(function(input, gp)
+    if gp then return end
+    if input.KeyCode == Enum.KeyCode.RightShift then Main.Visible = not Main.Visible end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if Config.SilentAim then SA.targetPart = FindTarget() else SA.targetPart = nil end
+end)
+
+print("[Theoo Hub] Complete Script Loaded.")
