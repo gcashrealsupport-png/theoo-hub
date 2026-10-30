@@ -557,3 +557,115 @@ local function CreateSlider(parent, text, min, max, default, callback)
         end
     end)
 end
+local CombatPage = CreatePage("Combat")
+local VisualPage = CreatePage("Visual")
+local MiscPage = CreatePage("Misc")
+
+local function SelectTab(page, btn)
+    for _, p in pairs(Pages) do p.Visible = false end
+    page.Visible = true
+    for _, c in pairs(Sidebar:GetChildren()) do
+        if c:IsA("TextButton") then
+            c.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+            c.TextColor3 = Color3.fromRGB(150, 150, 160)
+        end
+    end
+    btn.BackgroundColor3 = Color3.fromRGB(255, 60, 90)
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+end
+
+local function CreateTabButton(text, page)
+    local btn = Instance.new("TextButton", Sidebar)
+    btn.Size = UDim2.new(0.9, 0, 0, 30)
+    btn.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(150, 150, 160)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 12
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(function() SelectTab(page, btn) end)
+    return btn
+end
+
+local btnCombat = CreateTabButton("Combat", CombatPage)
+local btnVisual = CreateTabButton("Visual", VisualPage)
+local btnMisc = CreateTabButton("Misc", MiscPage)
+SelectTab(CombatPage, btnCombat)
+
+-- UI Filling
+CreateToggle(CombatPage, "Silent Aim (Snap)", false, function(v) Config.SilentAim = v end)
+CreateToggle(CombatPage, "Aim Assist (Smooth)", false, function(v) Config.AimAssist = v end)
+CreateSlider(CombatPage, "Assist Smoothness", 1, 20, 5, function(v) Config.AimAssistSmooth = v end)
+CreateToggle(CombatPage, "Wall Check (Visible)", true, function(v) Config.WallCheck = v end)
+CreateSlider(CombatPage, "FOV Size", 50, 500, 200, function(v) Config.FovSize = v end)
+CreateToggle(CombatPage, "Godmode (Velocity)", false, ToggleGodmode)
+-- [Ghaith] Combat additions
+CreateToggle(CombatPage, "Hitbox Expander", false, function(v)
+    Config.Hitbox = v
+    if not v then ResetHitboxes() end
+end)
+CreateSlider(CombatPage, "Hitbox Size", 5, 50, 20, function(v)
+    Config.HitboxSize = v
+end)
+CreateToggle(CombatPage, "Rapid Fire", false, function(v)
+    Config.RapidFire = v
+    ReapplyRapidFire()
+end)
+
+CreateToggle(VisualPage, "Chams ESP", false, function(v) Config.Chams = v end)
+CreateToggle(VisualPage, "FPS Booster", false, ToggleFPSBoost)
+CreateToggle(VisualPage, "Stretched Res", false, function(v) Config.StretchRes = v end)
+CreateSlider(VisualPage, "Stretch Value", 0.1, 1.5, 0.65, function(v) Config.StretchValue = v end)
+CreateToggle(VisualPage, "Real Minecraft", false, ToggleMinecraft)
+
+CreateToggle(MiscPage, "Device Spoofer (PC)", false, ToggleDeviceSpoofer)
+-- [Ghaith] Misc additions
+CreateToggle(MiscPage, "Speed", false, function(v)
+    Config.Speed = v
+    ApplySpeed()
+end)
+CreateSlider(MiscPage, "Speed Value", 16, 500, 100, function(v)
+    Config.SpeedValue = v
+    ApplySpeed()
+end)
+CreateToggle(MiscPage, "Infinite Jump", false, function(v)
+    Config.InfJump = v
+end)
+
+-- 15. DRAG & ICON
+local dragging, dragInput, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true; dragStart = input.Position; startPos = Main.Position
+    end
+end)
+TopBar.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then dragInput = input end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - dragStart
+        Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+TopBar.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+
+local Icon = Instance.new("TextButton", Gui)
+Icon.Size = UDim2.new(0, 45, 0, 45)
+Icon.Position = UDim2.new(0, 20, 0.5, -22)
+Icon.BackgroundColor3 = Color3.fromRGB(255, 60, 90)
+Icon.Text = "T"
+Icon.TextColor3 = Color3.fromRGB(255, 255, 255)
+Icon.Font = Enum.Font.GothamBlack
+Icon.TextSize = 24
+Instance.new("UICorner", Icon).CornerRadius = UDim.new(1, 0)
+Instance.new("UIStroke", Icon).Color = Color3.fromRGB(255, 255, 255)
+Icon.Activated:Connect(function() Main.Visible = not Main.Visible end)
+
+-- 16. MAIN LOOP
+RunService.RenderStepped:Connect(function()
+    if Config.SilentAim then SilentTarget = GetTarget() else SilentTarget = nil end
+    UpdateChams()
+end)
+
+print("[Theoo Hub] Ultimate + Chams + Ghaith additions Loaded.")
